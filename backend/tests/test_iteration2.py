@@ -27,6 +27,20 @@ def test_real_seed_from_pdf():
         assert days[8].activities==[]
 
 
+def test_all_itinerary_pois_are_preserved_for_hierarchical_presentation():
+    with memory_db() as db:
+        seed_database(db)
+        days=db.scalars(select(TripDay).order_by(TripDay.day_number)).unique().all()
+        expected={1:8,2:6,4:11,5:11,6:26,7:9}
+        for number,count in expected.items():
+            day=next(item for item in days if item.day_number==number)
+            assert len(day.points_of_interest)==count
+        day6=next(item for item in days if item.day_number==6)
+        names=[item['name'] for item in day6.points_of_interest]
+        assert names[0]=='Cattedrale di San Giovanni Battista'
+        assert 'Giardino Ibleo' in names and 'Chiesa di San Bartolomeo' in names
+
+
 def test_context_resolver_uses_activity_location():
     with memory_db() as db:
         seed_database(db)

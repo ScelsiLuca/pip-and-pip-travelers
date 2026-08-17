@@ -13,6 +13,8 @@ import LocationNavigation from "./LocationNavigation";
 import OperationalMap,{type TripLeg} from "./OperationalMap";
 import{travelStatus}from'./alertStatus';
 import{getUserFacingProviderStatus}from'./providerStatus';
+import{BottomSheet,GuideView,ModernTripView}from'./TravelExperience';
+import{nextStop}from'./tripModel';
 
 const months = [
   "gennaio",
@@ -51,7 +53,7 @@ const marker = L.divIcon({
   html: "<span>●</span>",
   iconSize: [28, 28],
 });
-type View = "today" | "trip" | "map" | "alerts" | "more";
+type View = "today" | "trip" | "map" | "guide" | "alerts" | "more";
 
 function State({ data }: { data: LiveData }) {
   const status=getUserFacingProviderStatus(data.dataState,data.updatedAt);
@@ -123,10 +125,12 @@ function Today({
   trip,
   refreshToken,
   onRefresh,
+  onGuide,
 }: {
   trip: Trip;
   refreshToken: number;
   onRefresh: () => void;
+  onGuide:(name:string)=>void;
 }) {
   const [live, setLive] = useState<Dashboard | null>(null),
     [loading, setLoading] = useState(true);
@@ -164,6 +168,7 @@ function Today({
   const relevantServices:Array<[string,LiveData|undefined]>=[['Meteo',live?.weather]];
   if(kind==='etna')relevantServices.push(['Etna',live?.etna]);
   if(kind==='sea'||kind==='boat_trip')relevantServices.push(['Mare',live?.sea]);
+  const stop=day?nextStop(day):null;
   return (
     <main>
       <header className="hero">
@@ -216,12 +221,14 @@ function Today({
           onSimulationChange={setSimulation}
           onPositionChange={setMapPosition}
         />
+        {stop&&<article className="next-stop-feature"><div><small>PROSSIMA TAPPA</small><h2>{stop.name}</h2><p>{stop.city}</p></div>{stop.coordinates&&<a href={`https://www.google.com/maps/dir/?api=1&destination=${stop.coordinates.lat},${stop.coordinates.lon}`} target="_blank" rel="noreferrer">Naviga →</a>}</article>}
         <OperationalMap day={day||null} days={trip.days} currentPosition={mapPosition} nextLeg={live?.nextTripLeg||null} route={live?.routing||null} onPositionChange={setMapPosition}/>
         {live && (
           <div style={{ display: "contents", order: order.weather }}>
             <Weather data={live.weather} />
           </div>
         )}
+        {day&&<article className="home-guide-card"><small>GUIDA LOCALE</small><h2>Scopri {primaryLocation.split(',')[0]}</h2><p>{day.pointsOfInterest.length} luoghi del tuo itinerario, disponibili anche offline.</p><button onClick={()=>onGuide(primaryLocation)}>Apri guida →</button></article>}
         {(kind === "sea" || kind === "boat_trip") && (
           <article className="card contextual-card marine-card" style={{ order: order.sea }}>
             <div className="card-head">
@@ -441,6 +448,7 @@ function TripView({ trip, onChanged }: { trip: Trip; onChanged: () => void }) {
 function MapView({ trip }: { trip: Trip }) {
   const [mode, setMode] = useState<"today" | "all">("all");
   const [routes, setRoutes] = useState<Array<{ routing: RouteLive }>>([]);
+  const[selectedPoint,setSelectedPoint]=useState<{name:string;lat:number;lon:number;day:number;category:string}|null>(null);
   const days =
     mode === "today"
       ? trip.days.filter((d) => d.date === trip.context.today)
@@ -540,7 +548,7 @@ function MapView({ trip }: { trip: Trip }) {
               ),
           )}
           {points.map((p, i) => (
-            <Marker key={i} position={[p.lat, p.lon]} icon={marker}>
+            <Marker key={i} position={[p.lat, p.lon]} icon={marker} eventHandlers={{click:()=>setSelectedPoint(p)}}>
               <Popup>
                 <strong>{p.name}</strong>
                 <br />
@@ -567,6 +575,7 @@ function MapView({ trip }: { trip: Trip }) {
           <div className="map-empty">Nessuna tappa per questa modalità.</div>
         )}
       </div>
+      <BottomSheet open={!!selectedPoint} title={selectedPoint?.name||''} onClose={()=>setSelectedPoint(null)}>{selectedPoint&&<><p className="sheet-location">Day {selectedPoint.day} · {selectedPoint.category}</p><div className="sheet-primary-actions"><a className="pip-primary" href={`https://www.google.com/maps/dir/?api=1&destination=${selectedPoint.lat},${selectedPoint.lon}`} target="_blank" rel="noreferrer">Naviga →</a><button className="pip-secondary" onClick={()=>setSelectedPoint(null)}>Torna alla mappa</button></div></>}</BottomSheet>
     </main>
   );
 }
@@ -610,6 +619,7 @@ export default function App() {
   const [view, setView] = useState<View>("today");
   const [tick, setTick] = useState(0);
   const [error, setError] = useState("");
+  const [guideTarget,setGuideTarget]=useState("");
   const load = () =>
     api<Trip>("/api/trip")
       .then(setTrip)
@@ -637,7 +647,7 @@ export default function App() {
   if (!trip)
     return (
       <div className="splash">
-        <div className="logo">S</div>
+        <img className="splash-logo" src="/pwa-icon-192.png" alt=""/>
         <p>Pip &amp; Pip Travelers</p>
       </div>
     );
@@ -651,20 +661,21 @@ export default function App() {
           trip={trip}
           refreshToken={tick}
           onRefresh={() => setTick((x) => x + 1)}
+          onGuide={name=>{setGuideTarget(name);setView("guide")}}
         />
       )}{" "}
-      {view === "trip" && <TripView trip={trip} onChanged={changed} />}{" "}
+      {view === "trip" && <ModernTripView trip={trip} onGuide={name=>{setGuideTarget(name);setView("guide")}} />}{" "}
       {view === "map" && <MapView trip={trip} />}{" "}
+      {view === "guide" && <GuideView trip={trip} initial={guideTarget}/>} {" "}
       {view === "alerts" && <Placeholder kind="alerts" />}{" "}
       {view === "more" && <Placeholder kind="more" />}
       <nav>
         {(
           [
-            ["today", "⌂", "Oggi"],
+            ["today", "⌂", "Home"],
+            ["trip", "◫", "Viaggio"],
             ["map", "⌖", "Mappa"],
-            ["trip", "□", "Viaggio"],
-            ["alerts", "!", "Alert"],
-            ["more", "•••", "Altro"],
+            ["guide", "◇", "Guida"],
           ] as const
         ).map(([id, icon, label]) => (
           <button
