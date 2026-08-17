@@ -86,10 +86,10 @@ export default function LocationNavigation({
       const state = String((error as Error).message);
       setPermissionError(
         state === "PERMISSION_DENIED"
-          ? "PERMISSION DENIED"
+          ? "Permesso posizione negato"
           : state === "GPS_DISABLED"
-            ? "GPS DISABLED"
-            : "LOCATION UNAVAILABLE",
+            ? "GPS disattivato"
+            : "Posizione non disponibile",
       );
     }
   };
@@ -172,14 +172,14 @@ export default function LocationNavigation({
       <div className="location-card">
         <div className="card-head">
           <span>📍 DOVE SEI</span>
-          <span className={`state ${gpsLive ? "live" : "unavailable"}`}>
+          <span className={`state ${gpsLive ? "ok" : "check"}`}>
             {simulation.enabled
-              ? "SIMULATION MODE"
+              ? "Simulazione"
               : gpsLive
-                ? "GPS LIVE"
+                ? "Posizione aggiornata"
                 : origin
-                  ? "PLANNED LOCATION"
-                  : "LOCATION UNAVAILABLE"}
+                  ? "Posizione pianificata"
+                  : "Posizione non disponibile"}
           </span>
         </div>
         {origin ? (
@@ -291,23 +291,14 @@ export default function LocationNavigation({
               📍 {navigation.nextActivity.location || "Località non impostata"}
             </p>
             {route?.distanceKm != null ? (
-              <div className="route-summary">
-                <strong>🚗 {route.distanceKm} km</strong>
-                <span>
-                  ⏱{" "}
-                  {route.liveDurationMinutes ||
-                    route.staticDurationMinutes ||
-                    route.durationMinutes}{" "}
-                  min
-                </span>
-              </div>
+              Number(route.distanceKm)<0.5?<p className="already-here">Sei già qui</p>:<div className="route-summary"><strong>🚗 {route.distanceKm} km</strong><span>⏱ {route.liveDurationMinutes||route.staticDurationMinutes||route.durationMinutes} min</span></div>
             ) : (
-              <p>ROUTE CONFIGURED · Routing live non ancora richiesto</p>
+              <p>Stima del percorso non disponibile</p>
             )}
             <p className="muted">
               {route?.trafficDelayMinutes != null
                 ? `🚦 +${route.trafficDelayMinutes} min traffico`
-                : "Traffico live non configurato"}
+                : "Tempo stimato senza traffico live"}
             </p>
             {navigation.googleMapsUrl && (
               <a

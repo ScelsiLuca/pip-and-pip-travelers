@@ -7,7 +7,7 @@ from sqlalchemy.pool import StaticPool
 from app.database import Base
 from app.models import Activity, TripDay
 from app.providers import parse_ingv_latest
-from app.services import current_trip_context, get_next_trip_leg, seed_database, serialize_day
+from app.services import current_trip_context, get_next_trip_leg, navigation_origin, seed_database, serialize_day
 
 
 def memory_db():
@@ -82,8 +82,20 @@ def test_next_trip_leg_across_itinerary():
     with memory_db() as db:
         seed_database(db)
         cases={date(2026,8,21):("Catania","Taormina","INTER_DAY"),date(2026,8,23):("Etna","Siracusa","PLANNED"),
+            date(2026,8,24):("Siracusa","Pillirina","INTER_DAY"),
             date(2026,8,25):("Pillirina","Noto","PLANNED"),date(2026,8,28):("Agrigento","Gibellina","PLANNED"),
             date(2026,8,31):("Trapani","San Vito Lo Capo","PLANNED")}
         for target,expected in cases.items():
             leg=get_next_trip_leg(db,target)
             assert (leg["origin"],leg["destination"],leg["kind"])==expected
+
+
+def test_simulated_position_cannot_change_trip_chronology():
+    with memory_db() as db:
+        seed_database(db)
+        before=get_next_trip_leg(db,date(2026,8,24))
+        # Navigation coordinates are deliberately independent from the chronological resolver.
+        day=db.scalar(select(TripDay).where(TripDay.day_number==4));activity=day.activities[0]
+        assert navigation_origin(day,activity,36.7422,15.1174)["type"]=="GPS"
+        after=get_next_trip_leg(db,date(2026,8,24))
+        assert (before["origin"],before["destination"],before["kind"]) == (after["origin"],after["destination"],after["kind"])

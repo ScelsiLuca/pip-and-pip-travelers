@@ -12,6 +12,7 @@ import type { Coordinates, LiveData, RouteLive, Trip, TripDay } from "./types";
 import LocationNavigation from "./LocationNavigation";
 import OperationalMap,{type TripLeg} from "./OperationalMap";
 import{travelStatus}from'./alertStatus';
+import{getUserFacingProviderStatus}from'./providerStatus';
 
 const months = [
   "gennaio",
@@ -53,14 +54,17 @@ const marker = L.divIcon({
 type View = "today" | "trip" | "map" | "alerts" | "more";
 
 function State({ data }: { data: LiveData }) {
+  const status=getUserFacingProviderStatus(data.dataState,data.updatedAt);
   return (
-    <span className={`state ${data.dataState.toLowerCase()}`}>
-      {data.dataState}
+    <span className={`state ${status.tone}`} title={status.detail}>
+      {status.label}
     </span>
   );
 }
 function Weather({ data }: { data: LiveData }) {
   const c = data.current;
+  const weatherCode=Number(c?.weather_code??-1);
+  const condition=weatherCode===0?'Sereno':weatherCode<=3?'Poco nuvoloso':weatherCode<=67?'Pioggia':weatherCode<=77?'Neve':weatherCode>=95?'Temporali':'Condizioni variabili';
   return (
     <article className="card weather">
       <div className="card-head">
@@ -72,7 +76,7 @@ function Weather({ data }: { data: LiveData }) {
           <div className="big-value">
             {Math.round(Number(c.temperature_2m))}°
           </div>
-          {data.message && <p>{data.message}</p>}
+          <p className="weather-condition">{condition}</p>
           <div className="metrics">
             <span>Percepiti {Math.round(Number(c.apparent_temperature))}°</span>
             <span>Vento {Math.round(Number(c.wind_speed_10m))} km/h</span>
@@ -94,7 +98,7 @@ function Fresh({ data }: { data: LiveData }) {
         hour: "2-digit",
         minute: "2-digit",
       })}{" "}
-      · {data.provider}
+      {data.dataState==='CACHE'||data.dataState==='OFFLINE'?' · dati salvati':''}
     </small>
   ) : null;
 }
@@ -156,6 +160,10 @@ function Today({
     phase = String(context.phase || "before"),
     progress = dayNumber ? Math.round((dayNumber / 15) * 100) : 0;
   const situation=travelStatus(live?.alerts||[],live?.alertCoverageState||'PARTIAL');
+  const primaryLocation=String((context as Record<string,unknown>).primaryLocation||day?.baseCity||day?.title||'Sicilia');
+  const relevantServices:Array<[string,LiveData|undefined]>=[['Meteo',live?.weather]];
+  if(kind==='etna')relevantServices.push(['Etna',live?.etna]);
+  if(kind==='sea'||kind==='boat_trip')relevantServices.push(['Mare',live?.sea]);
   return (
     <main>
       <header className="hero">
@@ -170,6 +178,7 @@ function Today({
           </p>
           <h1>Pip &amp; Pip Travelers</h1>
           <p className="sub">Il nostro viaggio in Sicilia</p>
+          {dayNumber>0&&<p className="hero-location">{primaryLocation} · Sicilia</p>}
           {dayNumber > 0 && (
             <div className="progress">
               <span style={{ width: `${progress}%` }} />
@@ -199,6 +208,7 @@ function Today({
         </strong>
       </section>
       <div className="grid">
+        {loading&&<><div className="skeleton skeleton-wide"/><div className="skeleton"/><div className="skeleton"/></>}
         <LocationNavigation
           day={day || null}
           days={trip.days}
@@ -206,14 +216,14 @@ function Today({
           onSimulationChange={setSimulation}
           onPositionChange={setMapPosition}
         />
-        <OperationalMap day={day||null} days={trip.days} currentPosition={mapPosition} nextLeg={live?.nextTripLeg||null} route={live?.routing||null}/>
+        <OperationalMap day={day||null} days={trip.days} currentPosition={mapPosition} nextLeg={live?.nextTripLeg||null} route={live?.routing||null} onPositionChange={setMapPosition}/>
         {live && (
           <div style={{ display: "contents", order: order.weather }}>
             <Weather data={live.weather} />
           </div>
         )}
         {(kind === "sea" || kind === "boat_trip") && (
-          <article className="card" style={{ order: order.sea }}>
+          <article className="card contextual-card marine-card" style={{ order: order.sea }}>
             <div className="card-head">
               <span>🌊 CONDIZIONI MARE</span>
               <State data={live?.sea || { dataState: "UNAVAILABLE" }} />
@@ -226,7 +236,7 @@ function Today({
             <Fresh data={live?.sea || { dataState: "UNAVAILABLE" }} />
           </article>
         )}
-        <article className="card" style={{ order: order.route }}>
+        <article className="card route-card" style={{ order: order.route }}>
           <div className="card-head">
             <span>🚗 PROSSIMA TRATTA</span>
             <State data={live?.routing || { dataState: "UNAVAILABLE" }} />
@@ -238,26 +248,21 @@ function Today({
               </h2>
               <p>
                 {live?.routing.distanceKm
-                  ? `${live.routing.distanceKm} km · ${live.routing.durationMinutes} min senza traffico`
-                  : "ROUTE CONFIGURED · Routing live non ancora richiesto"}
+                  ? `${live.routing.distanceKm} km · ${live.routing.durationMinutes} min`
+                  : "Stima del percorso non disponibile"}
               </p>
-              <p>Routing: {live?.routing.provider||'non disponibile'}</p>
               <p>Partenza prevista: {live.nextTripLeg.plannedDeparture||'non configurata'}</p>
               {live.nextTripLeg.destinationCoordinates&&<a className="maps-button" href={`https://www.google.com/maps/dir/?api=1&destination=${live.nextTripLeg.destinationCoordinates.lat},${live.nextTripLeg.destinationCoordinates.lon}`} target="_blank">APRI IN GOOGLE MAPS</a>}
-              <p>
-                {live?.traffic.dataState === "NOT_CONFIGURED"
-                  ? "Traffico: chiave TomTom non configurata"
-                  : `Traffico: ${live?.traffic.dataState}`}
-              </p>
+              <p className="muted">{live?.traffic.dataState === "NOT_CONFIGURED"?"Tempo stimato senza traffico live":getUserFacingProviderStatus(live?.traffic.dataState,live?.traffic.updatedAt).label}</p>
             </>
           ) : (
             <Empty text="Nessuna tratta pianificata" />
           )}
         </article>
-        <article className="card" style={{ order: order.alerts }}>
+        <article className="card travel-status-card" style={{ order: order.alerts }}>
           <div className="card-head">
             <span>🚨 SITUAZIONE VIAGGIO</span>
-            <span className={`state ${situation==='ATTENZIONE'?'warning':situation==='OK'?'live':'unavailable'}`}>{situation}</span>
+            <span className={`state ${situation==='ATTENZIONE'?'warning':situation==='OK'?'ok':'check'}`}>{situation==='OK'?'Tutto ok':situation==='ATTENZIONE'?'Attenzione':'Da controllare'}</span>
           </div>
           {live?.alerts.length ? (
             live.alerts.map((a, i) => (
@@ -267,11 +272,11 @@ function Today({
               </div>
             ))
           ) : (
-            <div><strong>{live?.alertCoverageState==='FULL'?'🟢 Nessuna criticità rilevata':'🟡 Nessun alert dai servizi attivi'}</strong><p>{live?.alertCoverageState==='PARTIAL'&&'Copertura parziale'}</p>{Object.entries(live?.alertCoverage||{}).map(([name,state])=><p key={name}>{name}: {state}</p>)}</div>
+            <div className="service-summary"><strong>{live?.alertCoverageState==='FULL'?'🟢 Tutto tranquillo':'🟡 Da controllare'}</strong><p>{live?.alertCoverageState==='PARTIAL'?'Alcuni servizi non sono ancora disponibili.':'Nessuna criticità rilevata dai servizi attivi.'}</p>{relevantServices.map(([name,data])=>{const s=getUserFacingProviderStatus(data?.dataState,data?.updatedAt);return <div className="service-row" key={name}><span>{name}</span><strong className={s.tone}>{s.label}</strong></div>})}<details><summary>Stato servizi</summary><p>Traffico · {getUserFacingProviderStatus(live?.traffic.dataState).label}</p><p>Notizie e Protezione Civile · Non disponibili</p></details></div>
           )}
         </article>
         {kind === "etna" && (
-          <article className="card" style={{ order: order.etna }}>
+          <article className="card contextual-card etna-card" style={{ order: order.etna }}>
             <div className="card-head">
               <span>🌋 ETNA LIVE</span>
               <State data={live?.etna || { dataState: "UNAVAILABLE" }} />

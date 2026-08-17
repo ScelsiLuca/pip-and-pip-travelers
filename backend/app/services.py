@@ -255,11 +255,14 @@ def get_next_trip_leg(db: Session, effective_date: date) -> dict | None:
     if current.date==effective_date and len(days)>1:
         following=days[1]
         origin_name=current.base_city or (current.destinations[-1] if current.destinations else current.title)
-        destination_name=following.base_city or (following.destinations[0] if following.destinations else following.title)
-        if origin_name and destination_name and origin_name.casefold()!=destination_name.casefold() and current.coordinates and following.coordinates:
+        first_activity=next((a for a in sorted(following.activities,key=lambda a:a.sort_order)
+            if a.status not in {"completed","skipped"} and a.location and a.coordinates),None)
+        destination_name=(first_activity.location if first_activity else None) or (following.destinations[0] if following.destinations else following.base_city or following.title)
+        destination_coordinates=(first_activity.coordinates if first_activity else None) or following.coordinates
+        if origin_name and destination_name and origin_name.casefold()!=destination_name.casefold() and current.coordinates and destination_coordinates:
             return {"id":None,"kind":"INTER_DAY","dayId":following.id,"origin":origin_name,
                 "destination":destination_name,"originCoordinates":current.coordinates,
-                "destinationCoordinates":following.coordinates,"plannedDeparture":None}
+                "destinationCoordinates":destination_coordinates,"plannedDeparture":None}
     for day in days[1:] if current.date==effective_date else days:
         if day.routes:
             route=day.routes[0]
