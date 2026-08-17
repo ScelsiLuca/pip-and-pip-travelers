@@ -1,6 +1,6 @@
 import type{Activity,Coordinates,TripDay}from'./types';
 export type StopStatus='planned'|'done'|'skipped';
-export type TripStop={id:string;key:string;name:string;city:string;kind:'poi'|'experience';coordinates:Coordinates|null;status:StopStatus;sourceIndex:number};
+export type TripStop={id:string;key:string;backendId?:number;name:string;city:string;kind:'poi'|'experience';address?:string|null;notes?:string|null;coordinates:Coordinates|null;status:StopStatus;sourceIndex:number;sortOrder:number;original?:boolean};
 export type LocationGroup={name:string;stops:TripStop[]};
 export type DayPresentation={day:TripDay;groups:LocationGroup[];transfers:TripDay['routes']};
 
@@ -16,11 +16,12 @@ export const poiIdentity=(name:string,city:string)=>`${slugify(name)}-${slugify(
 const statusKey=(id:string)=>`pip-stop:${id}`;
 export const readStopStatus=(id:string):StopStatus=>(typeof localStorage==='undefined'?null:localStorage.getItem(statusKey(id)) as StopStatus)||'planned';
 export const writeStopStatus=(id:string,status:StopStatus)=>{if(typeof localStorage!=='undefined')localStorage.setItem(statusKey(id),status)};
-const activityStop=(a:Activity,day:number,index:number,city:string):TripStop=>{const id=poiIdentity(a.title,city);return{id,key:id,name:a.title,city,kind:'experience',coordinates:a.coordinates,status:(a.status==='completed'?'done':a.status==='skipped'?'skipped':'planned'),sourceIndex:1000+index}};
+const activityStop=(a:Activity,day:number,index:number,city:string):TripStop=>{const id=poiIdentity(a.title,city);return{id,key:id,backendId:a.id,name:a.title,city,kind:'experience',address:a.address,notes:a.notes,coordinates:a.coordinates,status:(a.status==='completed'?'done':a.status==='skipped'?'skipped':'planned'),sourceIndex:1000+index,sortOrder:a.sortOrder??(index+1)*100}};
 
 export function presentDay(day:TripDay):DayPresentation{
+  if(day.stops?.length){const groups:LocationGroup[]=[];[...day.stops].sort((a,b)=>a.sortOrder-b.sortOrder).forEach((item,index)=>{let group=groups.find(g=>g.name===item.city);if(!group){group={name:item.city,stops:[]};groups.push(group)}const id=poiIdentity(item.name,item.city);group.stops.push({id,key:id,backendId:item.id,name:item.name,city:item.city,kind:item.itemType==='experience'?'experience':'poi',address:item.address,notes:item.notes,coordinates:item.coordinates,status:item.status==='completed'?'done':item.status==='skipped'?'skipped':'planned',sourceIndex:index,sortOrder:item.sortOrder,original:item.original})});return{day,groups,transfers:[...day.routes].sort((a,b)=>(a.sortOrder??0)-(b.sortOrder??0))}}
   const definitions=ranges[day.dayNumber]||[[day.baseCity||day.title||`Giorno ${day.dayNumber}`,0,day.pointsOfInterest.length]];
-  const groups:LocationGroup[]=definitions.map(([name,start,end])=>({name,stops:day.pointsOfInterest.slice(start,end).map((p,i)=>{const id=poiIdentity(p.name,name);return{id,key:id,name:p.name,city:name,kind:'poi' as const,coordinates:p.coordinates||null,status:readStopStatus(id),sourceIndex:start+i}})}));
+  const groups:LocationGroup[]=definitions.map(([name,start,end])=>({name,stops:day.pointsOfInterest.slice(start,end).map((p,i)=>{const id=poiIdentity(p.name,name);return{id,key:id,name:p.name,city:name,kind:'poi' as const,address:p.address,coordinates:p.coordinates||null,status:readStopStatus(id),sourceIndex:start+i,sortOrder:(start+i+1)*100}})}));
   const experiences=day.activities.filter(a=>['sea','boat_trip','etna','hiking','nature'].includes(a.activityType)||/tramonto|escursione|boat tour|mare\b/i.test(a.title));
   experiences.forEach((a,i)=>{const location=a.location||day.baseCity||day.title||'Esperienza';let group=groups.find(g=>location.toLowerCase().includes(g.name.toLowerCase())||g.name.toLowerCase().includes(location.toLowerCase()))||groups[0];if(!group){group={name:location,stops:[]};groups.push(group)}if(!group.stops.some(s=>s.name.toLowerCase()===a.title.toLowerCase()))group.stops.unshift(activityStop(a,day.dayNumber,i,group.name))});
   return{day,groups:groups.filter(g=>g.stops.length),transfers:day.routes};

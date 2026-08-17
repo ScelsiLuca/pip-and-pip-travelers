@@ -11,6 +11,7 @@ class ActivityIn(BaseModel):
     status: str = "planned"
     notes: str | None = None
     coordinates: dict | None = None
+    address: str | None = None
     sort_order: int = 0
 
 
@@ -29,6 +30,7 @@ class ActivityPatch(BaseModel):
     status: str | None = None
     notes: str | None = None
     coordinates: dict | None = None
+    address: str | None = None
     sort_order: int | None = None
 
 
@@ -64,3 +66,60 @@ class NavigationRequest(BaseModel):
     longitude: float | None = Field(default=None, ge=-180, le=180)
     simulation: bool = False
     simulation_date: date | None = None
+
+
+class StopIn(BaseModel):
+    name: str = Field(min_length=1, max_length=200)
+    city: str = Field(min_length=1, max_length=120)
+    item_type: str = "poi"
+    address: str | None = Field(default=None, max_length=300)
+    notes: str | None = None
+    coordinates: dict | None = None
+    status: str = "planned"
+    sort_order: int | None = None
+
+
+class StopPatch(BaseModel):
+    name: str | None = Field(default=None, min_length=1, max_length=200)
+    city: str | None = Field(default=None, min_length=1, max_length=120)
+    item_type: str | None = None
+    address: str | None = Field(default=None, max_length=300)
+    notes: str | None = None
+    coordinates: dict | None = None
+    status: str | None = None
+
+
+class ReorderItem(BaseModel):
+    kind: str
+    id: int
+
+
+class ReorderRequest(BaseModel):
+    items: list[ReorderItem]
+
+
+class RouteIn(BaseModel):
+    origin: str
+    destination: str
+    origin_address: str | None = None
+    destination_address: str | None = None
+    origin_coordinates: dict | None = None
+    destination_coordinates: dict | None = None
+    planned_departure: str | None = None
+    planned_duration_minutes: int | None = None
+    distance_km: float | None = None
+    mode: str = "car"
+    sort_order: int | None = None
+
+
+class RoutePatch(BaseModel):
+    origin: str | None = None
+    destination: str | None = None
+    origin_address: str | None = None
+    destination_address: str | None = None
+    origin_coordinates: dict | None = None
+    destination_coordinates: dict | None = None
+    planned_departure: str | None = None
+    planned_duration_minutes: int | None = None
+    distance_km: float | None = None
+    mode: str | None = None

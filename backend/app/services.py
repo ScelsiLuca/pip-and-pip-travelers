@@ -9,11 +9,45 @@ import httpx
 from sqlalchemy import delete, func, select
 from sqlalchemy.orm import Session
 from .config import settings
-from .models import Activity, CacheEntry, ChecklistItem, Route, TripDay
+from .models import Activity, CacheEntry, ChecklistItem, ItineraryStop, Route, TripDay
 
 ROME = ZoneInfo("Europe/Rome")
 TRIP_START = date(2026, 8, 21)
 TRIP_END = date(2026, 9, 4)
+
+CITY_RANGES: dict[int, list[tuple[str, int, int]]] = {
+    1:[("Catania",0,8)],2:[("Taormina",0,6)],4:[("Ortigia",0,7),("Siracusa",7,11)],
+    5:[("Pillirina",0,1),("Noto",1,8),("Marzamemi",8,11)],
+    6:[("Ragusa",0,5),("Ragusa Ibla",5,12),("Modica",12,16),("Scicli",16,25),("Valle dei Templi",25,26)],
+    7:[("Agrigento",0,8),("Scala dei Turchi",8,9)],8:[("Gibellina",0,2),("Trapani",2,3)],
+    10:[("Favignana",0,1)],11:[("San Vito Lo Capo",0,1)],13:[("Riserva dello Zingaro",0,1)],
+}
+
+
+def stop_city(day: TripDay, index: int) -> str:
+    for city, start, end in CITY_RANGES.get(day.day_number, []):
+        if start <= index < end:
+            return city
+    return day.base_city or day.title or f"Giorno {day.day_number}"
+
+
+def ensure_editable_itinerary(db: Session) -> None:
+    """One-way, idempotent import of the immutable PDF seed into editable rows."""
+    if (db.scalar(select(func.count(ItineraryStop.id))) or 0) > 0:
+        return
+    days = db.scalars(select(TripDay).order_by(TripDay.day_number)).unique().all()
+    for day in days:
+        for index, item in enumerate(day.points_of_interest or []):
+            db.add(ItineraryStop(
+                trip_day_id=day.id, name=item["name"], city=stop_city(day,index), item_type=item.get("category") or "poi",
+                address=item.get("address"), coordinates=item.get("coordinates"), sort_order=(index+1)*100,
+                original_key=f"day-{day.day_number}-poi-{index}",
+            ))
+        for route in day.routes:
+            destination_index=next((i for i,item in enumerate(day.points_of_interest or [])
+                if stop_city(day,i).casefold()==route.destination.casefold()),len(day.points_of_interest or []))
+            route.sort_order=max(50,destination_index*100+50)
+    db.commit()
 
 
 def trip_day_number(value: date) -> int | None:
@@ -42,7 +76,7 @@ def seed_database(db: Session) -> None:
         activity_count = db.scalar(select(func.count(Activity.id))) or 0
         is_placeholder = len(existing) == 15 and activity_count == 0 and all(not d.title for d in existing)
         if not is_placeholder:
-            return
+            ensure_editable_itinerary(db); return
         db.execute(delete(Route)); db.execute(delete(ChecklistItem)); db.execute(delete(TripDay)); db.commit()
     path = Path(__file__).parents[1] / "data" / "itinerary.json"
     payload = json.loads(path.read_text(encoding="utf-8"))
@@ -57,7 +91,7 @@ def seed_database(db: Session) -> None:
             db.add(Activity(trip_day_id=day.id, **activity))
         for route in item["routes"]:
             db.add(Route(trip_day_id=day.id, **route))
-    db.commit()
+    db.commit(); ensure_editable_itinerary(db)
 
 
 def serialize_day(day: TripDay | None) -> dict | None:
@@ -71,11 +105,15 @@ def serialize_day(day: TripDay | None) -> dict | None:
         "activityType": day.activities[0].activity_type if day.activities else "free_time",
         "activities": [{"id": a.id, "tripDayId": a.trip_day_id, "title": a.title, "location": a.location,
             "startTime": a.start_time, "endTime": a.end_time, "activityType": a.activity_type,
-            "status": a.status, "notes": a.notes, "coordinates": a.coordinates, "sortOrder": a.sort_order} for a in day.activities],
+            "status": a.status, "notes": a.notes, "coordinates": a.coordinates, "address": a.address, "sortOrder": a.sort_order} for a in day.activities],
+        "stops": [{"id":s.id,"tripDayId":s.trip_day_id,"name":s.name,"city":s.city,"itemType":s.item_type,
+            "address":s.address,"notes":s.notes,"coordinates":s.coordinates,"status":s.status,
+            "sortOrder":s.sort_order,"original":bool(s.original_key)} for s in day.stops if not s.archived],
         "routes": [{"id": r.id, "origin": r.origin, "destination": r.destination,
+            "originAddress":r.origin_address,"destinationAddress":r.destination_address,"mode":r.mode,
             "originCoordinates": r.origin_coordinates, "destinationCoordinates": r.destination_coordinates,
             "plannedDeparture": r.planned_departure, "plannedDurationMinutes": r.planned_duration_minutes,
-            "distanceKm": r.distance_km} for r in day.routes],
+            "distanceKm": r.distance_km,"sortOrder":r.sort_order} for r in day.routes if not r.archived],
     }
 
 
@@ -107,6 +145,19 @@ async def request_json(url: str, params: dict, attempts: int = 3) -> dict:
                 if attempt + 1 < attempts:
                     await asyncio.sleep(0.25 * (2 ** attempt))
     raise RuntimeError(f"Provider unavailable: {type(error).__name__}")
+
+
+async def geocode_preview(query: str) -> dict:
+    """Preview public-place candidates only; persistence is a separate confirmed action."""
+    async with httpx.AsyncClient(timeout=10,headers={"User-Agent":"PipAndPipTravelers/1.0 (public itinerary address verification)"}) as client:
+        response=await client.get("https://nominatim.openstreetmap.org/search",params={
+            "q":query,"format":"jsonv2","limit":3,"countrycodes":"it","addressdetails":1})
+        response.raise_for_status();raw=response.json()
+    candidates=[{"displayName":item.get("display_name"),"coordinates":{"lat":float(item["lat"]),"lon":float(item["lon"])},
+        "type":item.get("type"),"importance":item.get("importance")} for item in raw]
+    unambiguous=len(candidates)==1 or (len(candidates)>1 and (candidates[0].get("importance") or 0)-(candidates[1].get("importance") or 0)>.18)
+    return {"query":query,"candidates":candidates,"ambiguous":bool(candidates) and not unambiguous,
+        "provider":"Nominatim / OpenStreetMap"}
 
 
 async def weather(db: Session, lat: float, lon: float, target_date: date | None = None) -> dict:
@@ -188,14 +239,16 @@ def current_trip_context(db: Session, now: datetime | None = None, target_date: 
     if not day:
         return {**temporal, "primaryLocation":None, "nextLocation":None, "activityType":None,
             "coordinates":None, "nextActivity":None, "nextRoute":None}
+    active_stop=next((s for s in day.stops if not s.archived and s.status=="planned"),None)
     active = next((a for a in day.activities if a.status == "planned"), day.activities[0] if day.activities else None)
-    route = day.routes[0] if day.routes else None
-    primary = active.location if active else day.base_city
+    route = next((r for r in day.routes if not r.archived),None)
+    primary = active.location if active else active_stop.city if active_stop else day.base_city
     next_location = route.destination if route else (day.destinations[1] if len(day.destinations)>1 else None)
-    coords = active.coordinates if active and active.coordinates else day.coordinates
+    coords = active.coordinates if active and active.coordinates else active_stop.coordinates if active_stop and active_stop.coordinates else day.coordinates
     return {**temporal, "day":day.day_number, "primaryLocation":primary, "nextLocation":next_location,
-        "activityType":active.activity_type if active else "free_time", "coordinates":coords,
-        "nextActivity":None if not active else {"id":active.id,"title":active.title,"startTime":active.start_time,"location":active.location},
+        "activityType":active.activity_type if active else active_stop.item_type if active_stop else "free_time", "coordinates":coords,
+        "nextActivity":({"id":active.id,"title":active.title,"startTime":active.start_time,"location":active.location,"address":active.address} if active else
+            {"id":active_stop.id,"title":active_stop.name,"startTime":None,"location":active_stop.city,"address":active_stop.address} if active_stop else None),
         "nextRoute":None if not route else {"id":route.id,"origin":route.origin,"destination":route.destination,
             "originCoordinates":route.origin_coordinates,"destinationCoordinates":route.destination_coordinates}}
 
@@ -247,8 +300,9 @@ def get_next_trip_leg(db: Session, effective_date: date) -> dict | None:
     days=db.scalars(select(TripDay).where(TripDay.date>=effective_date).order_by(TripDay.date)).unique().all()
     if not days:return None
     current=days[0]
-    if current.date==effective_date and current.routes:
-        route=current.routes[0]
+    current_routes=sorted((r for r in current.routes if not r.archived),key=lambda r:r.sort_order)
+    if current.date==effective_date and current_routes:
+        route=current_routes[0]
         return {"id":route.id,"kind":"PLANNED","dayId":current.id,"origin":route.origin,
             "destination":route.destination,"originCoordinates":route.origin_coordinates,
             "destinationCoordinates":route.destination_coordinates,"plannedDeparture":route.planned_departure}
@@ -264,8 +318,9 @@ def get_next_trip_leg(db: Session, effective_date: date) -> dict | None:
                 "destination":destination_name,"originCoordinates":current.coordinates,
                 "destinationCoordinates":destination_coordinates,"plannedDeparture":None}
     for day in days[1:] if current.date==effective_date else days:
-        if day.routes:
-            route=day.routes[0]
+        routes=sorted((r for r in day.routes if not r.archived),key=lambda r:r.sort_order)
+        if routes:
+            route=routes[0]
             return {"id":route.id,"kind":"FUTURE_PLANNED","dayId":day.id,"origin":route.origin,
                 "destination":route.destination,"originCoordinates":route.origin_coordinates,
                 "destinationCoordinates":route.destination_coordinates,"plannedDeparture":route.planned_departure}
@@ -278,7 +333,16 @@ def haversine_km(origin: dict, destination: dict) -> float:
     return 6371*2*asin(sqrt(sin(dlat/2)**2+cos(lat1)*cos(lat2)*sin(dlon/2)**2))
 
 
-def google_maps_url(destination: dict, origin: dict | None = None) -> str:
-    params={"api":"1","destination":f"{destination['lat']},{destination['lon']}","travelmode":"driving"}
+def google_destination(coordinates: dict | None=None, address: str | None=None, name: str | None=None, city: str | None=None) -> str | None:
+    if coordinates and coordinates.get("lat") is not None and coordinates.get("lon") is not None:
+        return f"{coordinates['lat']},{coordinates['lon']}"
+    if address and address.strip():return address.strip()
+    fallback=", ".join(value.strip() for value in (name,city,"Italia") if value and value.strip())
+    return fallback or None
+
+
+def google_maps_url(destination: dict | str, origin: dict | None = None) -> str:
+    value=f"{destination['lat']},{destination['lon']}" if isinstance(destination,dict) else destination
+    params={"api":"1","destination":value,"travelmode":"driving"}
     if origin and origin.get("type") in {"GPS","SIMULATION"}: params["origin"]=f"{origin['lat']},{origin['lon']}"
     return "https://www.google.com/maps/dir/?"+urlencode(params)

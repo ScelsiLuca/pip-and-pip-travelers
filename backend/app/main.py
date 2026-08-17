@@ -6,15 +6,17 @@ from fastapi import Depends, FastAPI, HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
-from sqlalchemy import select
+from sqlalchemy import delete, func, select
 from sqlalchemy.orm import Session
 from .config import settings
-from .database import Base, SessionLocal, engine, get_db
-from .models import Activity, ChecklistItem, SavedPlace, TripDay
-from .schemas import ActivityIn, ActivityPatch, NavigationRequest, SavedPlaceIn
+from .database import Base, SessionLocal, engine, get_db, migrate_schema
+from .models import Activity, ChecklistItem, ItineraryStop, Route, SavedPlace, TripDay
+from .schemas import (ActivityIn, ActivityPatch, NavigationRequest, ReorderRequest, RouteIn,
+    RoutePatch, SavedPlaceIn, StopIn, StopPatch)
 from .services import (ROME, current_trip_context, get_next_activity, google_maps_url,
-    get_next_trip_leg, leave_now, navigation_origin, prioritize_alerts, sea, seed_database, serialize_day,
+    geocode_preview, get_next_trip_leg, leave_now, navigation_origin, prioritize_alerts, sea, seed_database, serialize_day,
     trip_context, weather, weather_alerts)
+from .restaurants import recommended_restaurants
 from .providers import etna_latest, google_route, osrm_route, tomtom_route
 
 
@@ -22,6 +24,7 @@ from .providers import etna_latest, google_route, osrm_route, tomtom_route
 async def lifespan(_: FastAPI):
     Path("data").mkdir(exist_ok=True)
     Base.metadata.create_all(engine)
+    migrate_schema()
     with SessionLocal() as db: seed_database(db)
     yield
 
@@ -43,6 +46,8 @@ async def status(db: Session = Depends(get_db)):
         "sea":{"name":"Open-Meteo Marine","state":"READY","requiresKey":False},
         "traffic":{"name":"TomTom Routing API","state":"LIVE" if settings.tomtom_api_key else "NOT_CONFIGURED","requiresKey":True},
         "googleRoutes":{"name":"Google Routes API","state":"READY" if settings.google_routes_api_key else "NOT_CONFIGURED","requiresKey":True},
+        "googlePlaces":{"name":"Google Places API (New)","state":"READY" if settings.google_places_api_key else "NOT_CONFIGURED","requiresKey":True},
+        "tripadvisor":{"name":"Tripadvisor Content API","state":"READY" if settings.tripadvisor_api_key else "NOT_CONFIGURED","requiresKey":True},
         "news":{"name":settings.news_provider,"state":"NOT_IMPLEMENTED"},
         "etna":{"name":"INGV Osservatorio Etneo","state":etna["dataState"]},
         "database":{"name":"SQLite","state":"OK"}},
@@ -99,6 +104,99 @@ def delete_activity(activity_id: int, db: Session = Depends(get_db)):
     activity = db.get(Activity, activity_id)
     if not activity: raise HTTPException(404, "Attività non trovata")
     db.delete(activity); db.commit()
+
+
+@app.post("/api/trip/{day_id}/stops", status_code=201)
+def add_stop(day_id: int, payload: StopIn, db: Session = Depends(get_db)):
+    day=db.get(TripDay,day_id)
+    if not day:raise HTTPException(404,"Giornata non trovata")
+    highest=max([item.sort_order for item in day.stops if not item.archived]+[item.sort_order for item in day.routes if not item.archived]+[0])
+    stop=ItineraryStop(trip_day_id=day_id,**payload.model_dump(exclude={"sort_order"}),sort_order=payload.sort_order or highest+100)
+    db.add(stop);db.commit();db.refresh(stop);return {"id":stop.id}
+
+
+@app.patch("/api/stops/{stop_id}")
+def update_stop(stop_id: int, payload: StopPatch, db: Session = Depends(get_db)):
+    stop=db.get(ItineraryStop,stop_id)
+    if not stop:raise HTTPException(404,"Tappa non trovata")
+    for key,value in payload.model_dump(exclude_unset=True).items():setattr(stop,key,value)
+    db.commit();return {"status":"ok"}
+
+
+@app.delete("/api/stops/{stop_id}")
+def delete_stop(stop_id: int, db: Session = Depends(get_db)):
+    stop=db.get(ItineraryStop,stop_id)
+    if not stop:raise HTTPException(404,"Tappa non trovata")
+    stop.archived=True;db.commit();return {"status":"archived"}
+
+
+@app.post("/api/stops/{stop_id}/restore")
+def restore_stop(stop_id: int, db: Session = Depends(get_db)):
+    stop=db.get(ItineraryStop,stop_id)
+    if not stop:raise HTTPException(404,"Tappa non trovata")
+    stop.archived=False;db.commit();return {"status":"ok"}
+
+
+@app.post("/api/trip/{day_id}/routes",status_code=201)
+def add_route(day_id:int,payload:RouteIn,db:Session=Depends(get_db)):
+    day=db.get(TripDay,day_id)
+    if not day:raise HTTPException(404,"Giornata non trovata")
+    highest=max([item.sort_order for item in day.stops if not item.archived]+[item.sort_order for item in day.routes if not item.archived]+[0])
+    route=Route(trip_day_id=day_id,**payload.model_dump(exclude={"sort_order"}),sort_order=payload.sort_order or highest+100)
+    db.add(route);db.commit();db.refresh(route);return {"id":route.id}
+
+
+@app.patch("/api/routes/item/{route_id}")
+def update_route(route_id:int,payload:RoutePatch,db:Session=Depends(get_db)):
+    route=db.get(Route,route_id)
+    if not route:raise HTTPException(404,"Trasferimento non trovato")
+    for key,value in payload.model_dump(exclude_unset=True).items():setattr(route,key,value)
+    db.commit();return {"status":"ok"}
+
+
+@app.delete("/api/routes/item/{route_id}")
+def delete_route(route_id:int,db:Session=Depends(get_db)):
+    route=db.get(Route,route_id)
+    if not route:raise HTTPException(404,"Trasferimento non trovato")
+    route.archived=True;db.commit();return {"status":"archived"}
+
+
+@app.post("/api/routes/item/{route_id}/restore")
+def restore_route(route_id:int,db:Session=Depends(get_db)):
+    route=db.get(Route,route_id)
+    if not route:raise HTTPException(404,"Trasferimento non trovato")
+    route.archived=False;db.commit();return {"status":"ok"}
+
+
+@app.post("/api/trip/{day_id}/reorder")
+def reorder_timeline(day_id:int,payload:ReorderRequest,db:Session=Depends(get_db)):
+    day=db.get(TripDay,day_id)
+    if not day:raise HTTPException(404,"Giornata non trovata")
+    valid={("stop",item.id):item for item in day.stops if not item.archived}|{("route",item.id):item for item in day.routes if not item.archived}
+    received=[(item.kind,item.id) for item in payload.items]
+    if len(received)!=len(set(received)) or set(received)!=set(valid):raise HTTPException(422,"La sequenza deve includere una sola volta tutti gli elementi attivi")
+    for index,key in enumerate(received,1):valid[key].sort_order=index*100
+    db.commit();return {"status":"ok","items":len(received)}
+
+
+@app.post("/api/trip/reset-original")
+def reset_original(db:Session=Depends(get_db)):
+    db.execute(delete(ItineraryStop));db.execute(delete(Route));db.execute(delete(Activity));db.execute(delete(ChecklistItem));db.execute(delete(TripDay));db.commit()
+    seed_database(db);return {"status":"ok"}
+
+
+@app.get("/api/geocode/preview")
+async def preview_geocode(q:str=Query(...,min_length=3,max_length=300)):
+    try:return await geocode_preview(q)
+    except Exception:raise HTTPException(503,"Servizio di verifica posizione non disponibile")
+
+
+@app.get("/api/restaurants/recommended")
+async def restaurants(location:str=Query(...,min_length=2,max_length=120),lat:float|None=None,lon:float|None=None,
+    open_now:bool=True,limit:int=Query(8,ge=1,le=8),refresh:bool=False,db:Session=Depends(get_db)):
+    result=await recommended_restaurants(db,location,lat,lon,refresh)
+    if open_now:result["restaurants"]=[item for item in result["restaurants"] if item.get("openNow") is True]
+    result["restaurants"]=result["restaurants"][:limit];return result
 
 
 @app.get("/api/weather/{location}")

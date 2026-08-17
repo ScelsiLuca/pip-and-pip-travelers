@@ -14,6 +14,7 @@ import OperationalMap,{type TripLeg} from "./OperationalMap";
 import{travelStatus}from'./alertStatus';
 import{getUserFacingProviderStatus}from'./providerStatus';
 import{BottomSheet,GuideView,ModernTripView}from'./TravelExperience';
+import{RestaurantCarousel}from'./RestaurantCarousel';
 import{nextStop}from'./tripModel';
 
 const months = [
@@ -228,7 +229,8 @@ function Today({
             <Weather data={live.weather} />
           </div>
         )}
-        {day&&<article className="home-guide-card"><small>GUIDA LOCALE</small><h2>Scopri {primaryLocation.split(',')[0]}</h2><p>{day.pointsOfInterest.length} luoghi del tuo itinerario, disponibili anche offline.</p><button onClick={()=>onGuide(primaryLocation)}>Apri guida →</button></article>}
+        {day&&<article className="home-guide-card"><small>GUIDA LOCALE</small><h2>Scopri {primaryLocation.split(',')[0]}</h2><p>{day.stops?.length||day.pointsOfInterest.length} luoghi del tuo itinerario, disponibili anche offline.</p><button onClick={()=>onGuide(primaryLocation)}>Apri guida →</button></article>}
+        {day&&<RestaurantCarousel location={primaryLocation.split(',')[0]} coordinates={day.coordinates}/>} 
         {(kind === "sea" || kind === "boat_trip") && (
           <article className="card contextual-card marine-card" style={{ order: order.sea }}>
             <div className="card-head">
@@ -482,7 +484,7 @@ function MapView({ trip }: { trip: Trip }) {
               category: a.activityType,
             }),
         );
-        d.pointsOfInterest.forEach(
+        (d.stops||[]).forEach(
           (x) =>
             x.coordinates &&
             p.push({
@@ -490,7 +492,7 @@ function MapView({ trip }: { trip: Trip }) {
               lat: x.coordinates.lat,
               lon: x.coordinates.lon,
               day: d.dayNumber,
-              category: x.category || "poi",
+              category: x.itemType || "poi",
             }),
         );
         return p;
@@ -664,7 +666,7 @@ export default function App() {
           onGuide={name=>{setGuideTarget(name);setView("guide")}}
         />
       )}{" "}
-      {view === "trip" && <ModernTripView trip={trip} onGuide={name=>{setGuideTarget(name);setView("guide")}} />}{" "}
+      {view === "trip" && <ModernTripView trip={trip} onChanged={changed} onGuide={name=>{setGuideTarget(name);setView("guide")}} />}{" "}
       {view === "map" && <MapView trip={trip} />}{" "}
       {view === "guide" && <GuideView trip={trip} initial={guideTarget}/>} {" "}
       {view === "alerts" && <Placeholder kind="alerts" />}{" "}

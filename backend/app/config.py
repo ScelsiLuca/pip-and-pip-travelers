@@ -11,6 +11,8 @@ class Settings(BaseSettings):
     routing_provider: str = "osrm"
     tomtom_api_key: str = ""
     google_routes_api_key: str = ""
+    google_places_api_key: str = ""
+    tripadvisor_api_key: str = ""
     news_provider: str = "official_rss"
     allow_mock_data: bool = False
     leave_now_buffer_minutes: int = 20

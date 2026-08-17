@@ -18,7 +18,8 @@ class TripDay(Base):
     coordinates: Mapped[dict | None] = mapped_column(JSON, nullable=True)
     status: Mapped[str] = mapped_column(String(20), default="planned")
     activities: Mapped[list["Activity"]] = relationship(cascade="all, delete-orphan", order_by="Activity.sort_order")
-    routes: Mapped[list["Route"]] = relationship(cascade="all, delete-orphan")
+    stops: Mapped[list["ItineraryStop"]] = relationship(cascade="all, delete-orphan", order_by="ItineraryStop.sort_order")
+    routes: Mapped[list["Route"]] = relationship(cascade="all, delete-orphan", order_by="Route.sort_order")
 
 
 class Activity(Base):
@@ -33,7 +34,24 @@ class Activity(Base):
     status: Mapped[str] = mapped_column(String(20), default="planned")
     notes: Mapped[str | None] = mapped_column(Text, nullable=True)
     coordinates: Mapped[dict | None] = mapped_column(JSON, nullable=True)
+    address: Mapped[str | None] = mapped_column(String(300), nullable=True)
     sort_order: Mapped[int] = mapped_column(Integer, default=0)
+
+
+class ItineraryStop(Base):
+    __tablename__ = "itinerary_stops"
+    id: Mapped[int] = mapped_column(primary_key=True)
+    trip_day_id: Mapped[int] = mapped_column(ForeignKey("trip_days.id"), index=True)
+    name: Mapped[str] = mapped_column(String(200))
+    city: Mapped[str] = mapped_column(String(120))
+    item_type: Mapped[str] = mapped_column(String(30), default="poi")
+    address: Mapped[str | None] = mapped_column(String(300), nullable=True)
+    notes: Mapped[str | None] = mapped_column(Text, nullable=True)
+    coordinates: Mapped[dict | None] = mapped_column(JSON, nullable=True)
+    status: Mapped[str] = mapped_column(String(20), default="planned")
+    sort_order: Mapped[int] = mapped_column(Integer, default=0, index=True)
+    archived: Mapped[bool] = mapped_column(Boolean, default=False, index=True)
+    original_key: Mapped[str | None] = mapped_column(String(260), nullable=True, unique=True)
 
 
 class Route(Base):
@@ -42,11 +60,16 @@ class Route(Base):
     trip_day_id: Mapped[int] = mapped_column(ForeignKey("trip_days.id"), index=True)
     origin: Mapped[str] = mapped_column(String(120))
     destination: Mapped[str] = mapped_column(String(120))
+    origin_address: Mapped[str | None] = mapped_column(String(300), nullable=True)
+    destination_address: Mapped[str | None] = mapped_column(String(300), nullable=True)
     origin_coordinates: Mapped[dict | None] = mapped_column(JSON, nullable=True)
     destination_coordinates: Mapped[dict | None] = mapped_column(JSON, nullable=True)
     planned_departure: Mapped[str | None] = mapped_column(String(5), nullable=True)
     planned_duration_minutes: Mapped[int | None] = mapped_column(nullable=True)
     distance_km: Mapped[float | None] = mapped_column(Float, nullable=True)
+    mode: Mapped[str] = mapped_column(String(20), default="car")
+    sort_order: Mapped[int] = mapped_column(Integer, default=0, index=True)
+    archived: Mapped[bool] = mapped_column(Boolean, default=False, index=True)
 
 
 class ChecklistItem(Base):
@@ -77,4 +100,3 @@ class CacheEntry(Base):
     value: Mapped[dict] = mapped_column(JSON)
     fetched_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
     expires_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
-
