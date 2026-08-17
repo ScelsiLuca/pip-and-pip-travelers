@@ -168,12 +168,8 @@ function Today({
                 ? "IL VIAGGIO SI AVVICINA"
                 : "VIAGGIO CONCLUSO"}
           </p>
-          <h1>{day?.title || day?.baseCity || "Sicily Live"}</h1>
-          <p className="sub">
-            {day?.destinations?.length
-              ? day.destinations.join(" → ")
-              : "Consulta il calendario del viaggio"}
-          </p>
+          <h1>Pip &amp; Pip Travelers</h1>
+          <p className="sub">Il nostro viaggio in Sicilia</p>
           {dayNumber > 0 && (
             <div className="progress">
               <span style={{ width: `${progress}%` }} />
@@ -637,7 +633,7 @@ export default function App() {
     return (
       <div className="splash">
         <div className="logo">S</div>
-        <p>Sicily Live Dashboard</p>
+        <p>Pip &amp; Pip Travelers</p>
       </div>
     );
   const changed = () => {

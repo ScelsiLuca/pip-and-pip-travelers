@@ -1,6 +1,6 @@
 $ErrorActionPreference = 'Stop'
 Write-Host "`n=====================================" -ForegroundColor DarkYellow
-Write-Host " SICILY LIVE DASHBOARD" -ForegroundColor Yellow
+Write-Host " PIP & PIP TRAVELERS" -ForegroundColor Yellow
 Write-Host "=====================================" -ForegroundColor DarkYellow
 if (-not (Get-Command docker -ErrorAction SilentlyContinue)) { throw 'Docker non trovato. Installa e avvia Docker Desktop.' }
 docker compose up -d --build
@@ -12,7 +12,7 @@ $lanIp = Get-NetIPAddress -AddressFamily IPv4 -ErrorAction SilentlyContinue |
     $_.InterfaceAlias -match 'Ethernet|Wi-Fi|WLAN'
   } |
   Select-Object -First 1 -ExpandProperty IPAddress
-Write-Host "`nSicily Dashboard running`n" -ForegroundColor Green
+Write-Host "`nPip & Pip Travelers running`n" -ForegroundColor Green
 Write-Host "Local:`nhttp://localhost:8080`n"
 if ($lanIp) { Write-Host "LAN:`nhttp://${lanIp}:8080`n" -ForegroundColor Cyan }
 else { Write-Warning 'IP LAN non rilevato. Esegui ipconfig.' }

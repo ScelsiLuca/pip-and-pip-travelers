@@ -1,4 +1,4 @@
-# Sicily Live Dashboard
+# Pip & Pip Travelers
 
 Dashboard locale e PWA per il viaggio dal 21 agosto al 4 settembre 2026. Il seed deriva da `Sicily.pdf`; orari e giorni non specificati nel documento restano volutamente vuoti.
 
