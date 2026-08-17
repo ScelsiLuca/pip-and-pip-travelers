@@ -1,0 +1,268 @@
+{
+  "scope": "all",
+  "queries": 66,
+  "poiResolvedTotal": 54,
+  "poiMissing": [
+    {
+      "day": 1,
+      "name": "Via Crociferi (via delle chiese)"
+    },
+    {
+      "day": 1,
+      "name": "Pescheria (mercato)"
+    },
+    {
+      "day": 1,
+      "name": "Via Etnea"
+    },
+    {
+      "day": 1,
+      "name": "Giardino Bellini - Villa Bellini"
+    },
+    {
+      "day": 4,
+      "name": "Piazza Duomo"
+    },
+    {
+      "day": 4,
+      "name": "Parco Archeologico Neapolis"
+    },
+    {
+      "day": 5,
+      "name": "Chiesa dell’Immacolata"
+    },
+    {
+      "day": 5,
+      "name": "Vicolo delle sirene"
+    },
+    {
+      "day": 5,
+      "name": "Piazza Regina Margherita"
+    },
+    {
+      "day": 6,
+      "name": "Corso Italia con vicoli/chiese/palazzi"
+    },
+    {
+      "day": 6,
+      "name": "Duomo di San Giorgio Ragusa"
+    },
+    {
+      "day": 6,
+      "name": "Belvedere di San Benedetto"
+    },
+    {
+      "day": 6,
+      "name": "Piazza Busacca"
+    },
+    {
+      "day": 6,
+      "name": "Chiesa di San Michele Arcangelo"
+    },
+    {
+      "day": 6,
+      "name": "Antica Farmacia Cartia"
+    },
+    {
+      "day": 6,
+      "name": "Chiesa di San Giovanni Evangelista (Cristo in gonnella)"
+    },
+    {
+      "day": 6,
+      "name": "Piazza Italia"
+    },
+    {
+      "day": 6,
+      "name": "Chiesa di San Ignazio di Loyola"
+    },
+    {
+      "day": 7,
+      "name": "Statua Andrea Camilleri"
+    },
+    {
+      "day": 7,
+      "name": "Basilica della Beata Vergine Maria"
+    },
+    {
+      "day": 7,
+      "name": "Scala degli artisti"
+    },
+    {
+      "day": 7,
+      "name": "Camera di Commercio"
+    },
+    {
+      "day": 7,
+      "name": "Piazza del Municipio"
+    }
+  ],
+  "manualReview": [
+    {
+      "query": "Via Crociferi (via delle chiese), Catania, Sicilia, Italia",
+      "status": "unresolved",
+      "coordinates": null,
+      "candidates": []
+    },
+    {
+      "query": "Pescheria (mercato), Catania, Sicilia, Italia",
+      "status": "unresolved",
+      "coordinates": null,
+      "candidates": []
+    },
+    {
+      "query": "Via Etnea, Catania, Sicilia, Italia",
+      "status": "ambiguous",
+      "coordinates": null,
+      "candidates": [
+        "Via Etnea, San Berillo, Centro storico, Catania, Sicilia, 95124, Italia",
+        "Via Etnea, Consolazione, Borgo, Borgo-Sanzio, Catania, Sicilia, 95128, Italia",
+        "Via Etnea, Monserrato, Borgo, Centro storico, Catania, Sicilia, 95125, Italia"
+      ]
+    },
+    {
+      "query": "Giardino Bellini - Villa Bellini, Catania, Sicilia, Italia",
+      "status": "unresolved",
+      "coordinates": null,
+      "candidates": []
+    },
+    {
+      "query": "Piazza Duomo, Siracusa, Sicilia, Italia",
+      "status": "ambiguous",
+      "coordinates": null,
+      "candidates": [
+        "Piazza Duomo, Lentini, Siracusa, Sicilia, 96016, Italia",
+        "Piazza Duomo, Melilli, Siracusa, Sicilia, 96010, Italia",
+        "Piazza Duomo, Ortigia, Siracusa, Sicilia, 96100, Italia"
+      ]
+    },
+    {
+      "query": "Parco Archeologico Neapolis, Siracusa, Sicilia, Italia",
+      "status": "ambiguous",
+      "coordinates": null,
+      "candidates": [
+        "Area Monumentale della Neapolis, Via Ettore Campailla, Neapolis, Siracusa, Sicilia, 96100, Italia",
+        "Biglietteria del Parco Archeologico, Via Francesco Saverio Cavallari, Neapolis, Siracusa, Sicilia, 96100, Italia",
+        "Biglietteria del Parco Archeologico, Via Luigi Bernabò Brea, Neapolis, Siracusa, Sicilia, 96100, Italia"
+      ]
+    },
+    {
+      "query": "Chiesa dell’Immacolata, Siracusa, Sicilia, Italia",
+      "status": "ambiguous",
+      "coordinates": null,
+      "candidates": [
+        "Chiesa dell'Immacolata, Corso Vittorio Emanuele Terzo, Palazzolo Acreide, Siracusa, Sicilia, 96010, Italia",
+        "Chiesa dell'Immacolata, Via San Giovanni Bosco, Villaggio Mantelli, Priolo Gargallo, Siracusa, Sicilia, 96010, Italia",
+        "Chiesa dell'Immacolata, Ronco Undicesimo di Via Roma, Carlentini Nord, Carlentini, Siracusa, Sicilia, 96013, Italia"
+      ]
+    },
+    {
+      "query": "Vicolo delle sirene, Siracusa, Sicilia, Italia",
+      "status": "unresolved",
+      "coordinates": null,
+      "candidates": []
+    },
+    {
+      "query": "Piazza Regina Margherita, Siracusa, Sicilia, Italia",
+      "status": "ambiguous",
+      "coordinates": null,
+      "candidates": [
+        "Piazza Regina Margherita, Avola, Siracusa, Sicilia, 96012, Italia",
+        "Piazza Regina Margherita, Marzamemi, Pachino, Siracusa, Sicilia, 96018, Italia"
+      ]
+    },
+    {
+      "query": "Corso Italia con vicoli/chiese/palazzi, Ragusa, Sicilia, Italia",
+      "status": "unresolved",
+      "coordinates": null,
+      "candidates": []
+    },
+    {
+      "query": "Duomo di San Giorgio Ragusa, Sicilia, Italia",
+      "status": "ambiguous",
+      "coordinates": null,
+      "candidates": [
+        "Duomo di San Giorgio, Via Capitano Bocchieri, Cappuccini, Ragusa Ibla, Ragusa, Sicilia, 97100, Italia",
+        "Duomo di San Giorgio, Via Moncada, Dente, Modica Alta, Modica, Ragusa, Sicilia, Italia"
+      ]
+    },
+    {
+      "query": "Belvedere di San Benedetto, Ragusa, Sicilia, Italia",
+      "status": "unresolved",
+      "coordinates": null,
+      "candidates": []
+    },
+    {
+      "query": "Piazza Busacca, Ragusa, Sicilia, Italia",
+      "status": "ambiguous",
+      "coordinates": null,
+      "candidates": [
+        "Piazza Busacca, Balata, Scicli, Ragusa, Sicilia, 97018, Italia",
+        "Piazza Matteo Busacca, Vittoria, Ragusa, Sicilia, 97019, Italia"
+      ]
+    },
+    {
+      "query": "Chiesa di San Michele Arcangelo, Ragusa, Sicilia, Italia",
+      "status": "unresolved",
+      "coordinates": null,
+      "candidates": []
+    },
+    {
+      "query": "Antica Farmacia Cartia, Ragusa, Sicilia, Italia",
+      "status": "unresolved",
+      "coordinates": null,
+      "candidates": []
+    },
+    {
+      "query": "Chiesa di San Giovanni Evangelista (Cristo in gonnella), Ragusa, Sicilia, Italia",
+      "status": "unresolved",
+      "coordinates": null,
+      "candidates": []
+    },
+    {
+      "query": "Piazza Italia, Ragusa, Sicilia, Italia",
+      "status": "ambiguous",
+      "coordinates": null,
+      "candidates": [
+        "Piazza Italia, Modica Alta, Modica, Ragusa, Sicilia, Italia",
+        "Piazza Italia, Balata, Scicli, Ragusa, Sicilia, 97018, Italia",
+        "Piazza Italia, Vittoria, Ragusa, Sicilia, 97019, Italia"
+      ]
+    },
+    {
+      "query": "Chiesa di San Ignazio di Loyola, Ragusa, Sicilia, Italia",
+      "status": "unresolved",
+      "coordinates": null,
+      "candidates": []
+    },
+    {
+      "query": "Statua Andrea Camilleri, Agrigento, Sicilia, Italia",
+      "status": "unresolved",
+      "coordinates": null,
+      "candidates": []
+    },
+    {
+      "query": "Basilica della Beata Vergine Maria, Agrigento, Sicilia, Italia",
+      "status": "unresolved",
+      "coordinates": null,
+      "candidates": []
+    },
+    {
+      "query": "Scala degli artisti, Agrigento, Sicilia, Italia",
+      "status": "unresolved",
+      "coordinates": null,
+      "candidates": []
+    },
+    {
+      "query": "Camera di Commercio, Agrigento, Sicilia, Italia",
+      "status": "unresolved",
+      "coordinates": null,
+      "candidates": []
+    },
+    {
+      "query": "Piazza del Municipio, Agrigento, Sicilia, Italia",
+      "status": "unresolved",
+      "coordinates": null,
+      "candidates": []
+    }
+  ]
+}

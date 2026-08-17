@@ -1,0 +1,1 @@
+import{describe,expect,it}from'vitest';import{resolveApiUrl}from'./api';describe('API URL',()=>{it('supports same origin web',()=>expect(resolveApiUrl('','/api/trip')).toBe('/api/trip'));it('supports Android HTTPS backend',()=>expect(resolveApiUrl('https://api.example/','api/trip')).toBe('https://api.example/api/trip'))});

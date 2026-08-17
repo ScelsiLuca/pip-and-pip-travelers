@@ -1,0 +1,22 @@
+services:
+  dashboard:
+    build: .
+    container_name: sicily-live-dashboard
+    env_file:
+      - path: .env
+        required: false
+    environment:
+      DATABASE_URL: sqlite:////app/data/sicily.sqlite3
+      APP_HOST: 0.0.0.0
+      APP_PORT: 8080
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./data:/app/data
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8080/health')"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+

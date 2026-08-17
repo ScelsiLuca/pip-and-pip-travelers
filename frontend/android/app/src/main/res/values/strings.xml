@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">Pip &amp; Pip Travelers</string>
+    <string name="title_activity_main">Pip &amp; Pip Travelers</string>
+    <string name="package_name">com.pipandpip.travelers</string>
+    <string name="custom_url_scheme">com.pipandpip.travelers</string>
+</resources>

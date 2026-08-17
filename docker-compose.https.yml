@@ -1,0 +1,14 @@
+services:
+  https:
+    image: caddy:2.10-alpine
+    container_name: sicily-live-dashboard-https
+    depends_on:
+      dashboard:
+        condition: service_healthy
+    ports:
+      - "8443:8443"
+    volumes:
+      - ./docker/Caddyfile:/etc/caddy/Caddyfile:ro
+      - ./certs:/certs:ro
+    restart: unless-stopped
+

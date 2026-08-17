@@ -1,0 +1,677 @@
+{
+  "Via Crociferi (via delle chiese), Catania, Sicilia, Italia": {
+    "status": "unresolved",
+    "coordinates": null,
+    "candidates": []
+  },
+  "Pescheria (mercato), Catania, Sicilia, Italia": {
+    "status": "unresolved",
+    "coordinates": null,
+    "candidates": []
+  },
+  "Piazza del Duomo, Catania, Sicilia, Italia": {
+    "status": "resolved",
+    "coordinates": {
+      "lat": 37.5024076,
+      "lon": 15.0871898,
+      "displayName": "Piazza Duomo, Giudecca, Centro storico, Catania, Sicilia, Italia",
+      "source": "OpenStreetMap Nominatim"
+    },
+    "candidates": [
+      "Piazza Duomo, Giudecca, Centro storico, Catania, Sicilia, Italia",
+      "Piazza del Duomo, Santa Maria la Scala, Acireale, Catania, Sicilia, 95024, Italia"
+    ]
+  },
+  "Fontana dell'Elefante, Catania, Sicilia, Italia": {
+    "status": "resolved",
+    "coordinates": {
+      "lat": 37.5024904,
+      "lon": 15.0870913,
+      "displayName": "Fontana dell'Elefante, Via Vittorio Emanuele Secondo, Giudecca, Centro storico, Catania, Sicilia, 95124, Italia",
+      "source": "OpenStreetMap Nominatim"
+    },
+    "candidates": [
+      "Fontana dell'Elefante, Via Vittorio Emanuele Secondo, Giudecca, Centro storico, Catania, Sicilia, 95124, Italia"
+    ]
+  },
+  "Via Etnea, Catania, Sicilia, Italia": {
+    "status": "ambiguous",
+    "coordinates": null,
+    "candidates": [
+      "Via Etnea, San Berillo, Centro storico, Catania, Sicilia, 95124, Italia",
+      "Via Etnea, Consolazione, Borgo, Borgo-Sanzio, Catania, Sicilia, 95128, Italia",
+      "Via Etnea, Monserrato, Borgo, Centro storico, Catania, Sicilia, 95125, Italia"
+    ]
+  },
+  "Piazza Università, Catania, Sicilia, Italia": {
+    "status": "resolved",
+    "coordinates": {
+      "lat": 37.5036511,
+      "lon": 15.0871615,
+      "displayName": "Piazza dell'Università, Giudecca, Centro storico, Catania, Sicilia, Italia",
+      "source": "OpenStreetMap Nominatim"
+    },
+    "candidates": [
+      "Piazza dell'Università, Giudecca, Centro storico, Catania, Sicilia, Italia"
+    ]
+  },
+  "Teatro Massimo Bellini, Catania, Sicilia, Italia": {
+    "status": "resolved",
+    "coordinates": {
+      "lat": 37.504157,
+      "lon": 15.0898267,
+      "displayName": "Teatro Massimo Bellini, Via Maria Callas, San Berillo, Centro storico, Catania, Sicilia, 95131, Italia",
+      "source": "OpenStreetMap Nominatim"
+    },
+    "candidates": [
+      "Teatro Massimo Bellini, Via Maria Callas, San Berillo, Centro storico, Catania, Sicilia, 95131, Italia"
+    ]
+  },
+  "Giardino Bellini - Villa Bellini, Catania, Sicilia, Italia": {
+    "status": "unresolved",
+    "coordinates": null,
+    "candidates": []
+  },
+  "Duomo di Taormina, Sicilia, Italia": {
+    "status": "resolved",
+    "coordinates": {
+      "lat": 37.8510175,
+      "lon": 15.2830125,
+      "displayName": "Duomo, Vico Sacramento, Villagonia, Taormina, Messina, Sicilia, 98039, Italia",
+      "source": "OpenStreetMap Nominatim"
+    },
+    "candidates": [
+      "Duomo, Vico Sacramento, Villagonia, Taormina, Messina, Sicilia, 98039, Italia"
+    ]
+  },
+  "Corso Umberto, Taormina, Sicilia, Italia": {
+    "status": "resolved",
+    "coordinates": {
+      "lat": 37.8516454,
+      "lon": 15.2857237,
+      "displayName": "Corso Umberto Primo, Villagonia, Taormina, Messina, Sicilia, 98039, Italia",
+      "source": "OpenStreetMap Nominatim"
+    },
+    "candidates": [
+      "Corso Umberto Primo, Villagonia, Taormina, Messina, Sicilia, 98039, Italia",
+      "Corso Umberto Primo, Villagonia, Taormina, Messina, Sicilia, 98039, Italia",
+      "Corso Umberto Primo, Spisone, Taormina, Messina, Sicilia, 98039, Italia"
+    ]
+  },
+  "Palazzo Corvaja, Taormina, Sicilia, Italia": {
+    "status": "resolved",
+    "coordinates": {
+      "lat": 37.8539317,
+      "lon": 15.288518,
+      "displayName": "Palazzo Corvaja, Piazza Vittorio Emanuele Secondo, Spisone, Taormina, Messina, Sicilia, 98039, Italia",
+      "source": "OpenStreetMap Nominatim"
+    },
+    "candidates": [
+      "Palazzo Corvaja, Piazza Vittorio Emanuele Secondo, Spisone, Taormina, Messina, Sicilia, 98039, Italia"
+    ]
+  },
+  "Villa Comunale, Taormina, Sicilia, Italia": {
+    "status": "resolved",
+    "coordinates": {
+      "lat": 37.8509485,
+      "lon": 15.2899881,
+      "displayName": "Parco Villa Comunale di Lady Florence Trevelyan, Mazzarò, Taormina, Messina, Sicilia, 98039, Italia",
+      "source": "OpenStreetMap Nominatim"
+    },
+    "candidates": [
+      "Parco Villa Comunale di Lady Florence Trevelyan, Mazzarò, Taormina, Messina, Sicilia, 98039, Italia"
+    ]
+  },
+  "Teatro Antico, Taormina, Sicilia, Italia": {
+    "status": "resolved",
+    "coordinates": {
+      "lat": 37.8523709,
+      "lon": 15.2922708,
+      "displayName": "Teatro Greco, 1, Via Teatro Greco, Mazzarò, Taormina, Messina, Sicilia, 98039, Italia",
+      "source": "OpenStreetMap Nominatim"
+    },
+    "candidates": [
+      "Teatro Greco, 1, Via Teatro Greco, Mazzarò, Taormina, Messina, Sicilia, 98039, Italia"
+    ]
+  },
+  "Isola di Ortigia, Siracusa, Sicilia, Italia": {
+    "status": "resolved",
+    "coordinates": {
+      "lat": 37.0599973,
+      "lon": 15.2950175,
+      "displayName": "Isola di Ortigia, Siracusa, Sicilia, 96100, Italia",
+      "source": "OpenStreetMap Nominatim"
+    },
+    "candidates": [
+      "Isola di Ortigia, Siracusa, Sicilia, 96100, Italia"
+    ]
+  },
+  "Lungomare Alfeo, Siracusa, Sicilia, Italia": {
+    "status": "resolved",
+    "coordinates": {
+      "lat": 37.0562723,
+      "lon": 15.2935298,
+      "displayName": "Lungomare Alfeo, Ortigia, Siracusa, Sicilia, 96100, Italia",
+      "source": "OpenStreetMap Nominatim"
+    },
+    "candidates": [
+      "Lungomare Alfeo, Ortigia, Siracusa, Sicilia, 96100, Italia",
+      "Via Monsignor Sebastiano Gozzo, Ortigia, Siracusa, Sicilia, 96100, Italia"
+    ]
+  },
+  "Fonte Aretusa, Siracusa, Sicilia, Italia": {
+    "status": "resolved",
+    "coordinates": {
+      "lat": 37.0572691,
+      "lon": 15.2929132,
+      "displayName": "Fonte Aretusa, Ortigia, Siracusa, Sicilia, 96100, Italia",
+      "source": "OpenStreetMap Nominatim"
+    },
+    "candidates": [
+      "Fonte Aretusa, Ortigia, Siracusa, Sicilia, 96100, Italia"
+    ]
+  },
+  "Fontana di Diana, Siracusa, Sicilia, Italia": {
+    "status": "resolved",
+    "coordinates": {
+      "lat": 37.0612494,
+      "lon": 15.29386,
+      "displayName": "Fontana di Diana, Corso Giacomo Matteotti, Ortigia, Siracusa, Sicilia, 96100, Italia",
+      "source": "OpenStreetMap Nominatim"
+    },
+    "candidates": [
+      "Fontana di Diana, Corso Giacomo Matteotti, Ortigia, Siracusa, Sicilia, 96100, Italia"
+    ]
+  },
+  "Piazza Duomo, Siracusa, Sicilia, Italia": {
+    "status": "ambiguous",
+    "coordinates": null,
+    "candidates": [
+      "Piazza Duomo, Lentini, Siracusa, Sicilia, 96016, Italia",
+      "Piazza Duomo, Melilli, Siracusa, Sicilia, 96010, Italia",
+      "Piazza Duomo, Ortigia, Siracusa, Sicilia, 96100, Italia"
+    ]
+  },
+  "Cattedrale di Siracusa, Sicilia, Italia": {
+    "status": "resolved",
+    "coordinates": {
+      "lat": 37.0595851,
+      "lon": 15.293823,
+      "displayName": "Cattedrale di Siracusa, Piazza Minerva, Ortigia, Siracusa, Sicilia, 96100, Italia",
+      "source": "OpenStreetMap Nominatim"
+    },
+    "candidates": [
+      "Cattedrale di Siracusa, Piazza Minerva, Ortigia, Siracusa, Sicilia, 96100, Italia"
+    ]
+  },
+  "Tempio di Apollo, Siracusa, Sicilia, Italia": {
+    "status": "resolved",
+    "coordinates": {
+      "lat": 37.0640302,
+      "lon": 15.2930187,
+      "displayName": "Tempio di Apollo, Via del Mercato, Ortigia, Siracusa, Sicilia, 96100, Italia",
+      "source": "OpenStreetMap Nominatim"
+    },
+    "candidates": [
+      "Tempio di Apollo, Via del Mercato, Ortigia, Siracusa, Sicilia, 96100, Italia",
+      "Tempio di Apollo, Via dell'Apollonion, Ortigia, Siracusa, Sicilia, 96100, Italia"
+    ]
+  },
+  "Parco Archeologico Neapolis, Siracusa, Sicilia, Italia": {
+    "status": "ambiguous",
+    "coordinates": null,
+    "candidates": [
+      "Area Monumentale della Neapolis, Via Ettore Campailla, Neapolis, Siracusa, Sicilia, 96100, Italia",
+      "Biglietteria del Parco Archeologico, Via Francesco Saverio Cavallari, Neapolis, Siracusa, Sicilia, 96100, Italia",
+      "Biglietteria del Parco Archeologico, Via Luigi Bernabò Brea, Neapolis, Siracusa, Sicilia, 96100, Italia"
+    ]
+  },
+  "Orecchio di Dionisio, Siracusa, Sicilia, Italia": {
+    "status": "resolved",
+    "coordinates": {
+      "lat": 37.0763431,
+      "lon": 15.2755183,
+      "displayName": "Orecchio di Dionisio, Viale Giulio Emanuele Rizzo, Neapolis, Siracusa, Sicilia, 96100, Italia",
+      "source": "OpenStreetMap Nominatim"
+    },
+    "candidates": [
+      "Orecchio di Dionisio, Viale Giulio Emanuele Rizzo, Neapolis, Siracusa, Sicilia, 96100, Italia"
+    ]
+  },
+  "Teatro greco, Siracusa, Sicilia, Italia": {
+    "status": "resolved",
+    "coordinates": {
+      "lat": 37.0760111,
+      "lon": 15.275025,
+      "displayName": "Teatro Greco, Via dei Sepolcri, Neapolis, Siracusa, Sicilia, 96100, Italia",
+      "source": "OpenStreetMap Nominatim"
+    },
+    "candidates": [
+      "Teatro Greco, Via dei Sepolcri, Neapolis, Siracusa, Sicilia, 96100, Italia"
+    ]
+  },
+  "Santuario Madonna delle Lacrime, Siracusa, Sicilia, Italia": {
+    "status": "resolved",
+    "coordinates": {
+      "lat": 37.0747184,
+      "lon": 15.2855218,
+      "displayName": "Basilica Santuario della Madonna delle Lacrime, Viale Teocrito, Santa Lucia, Siracusa, Sicilia, 96100, Italia",
+      "source": "OpenStreetMap Nominatim"
+    },
+    "candidates": [
+      "Basilica Santuario della Madonna delle Lacrime, Viale Teocrito, Santa Lucia, Siracusa, Sicilia, 96100, Italia"
+    ]
+  },
+  "Teatro Comunale Tina di Lorenzo, Siracusa, Sicilia, Italia": {
+    "status": "resolved",
+    "coordinates": {
+      "lat": 36.8912168,
+      "lon": 15.0676728,
+      "displayName": "Teatro comunale Tina Di Lorenzo, Vico Salonia, Piano Alto, Noto, Siracusa, Sicilia, 96017, Italia",
+      "source": "OpenStreetMap Nominatim"
+    },
+    "candidates": [
+      "Teatro comunale Tina Di Lorenzo, Vico Salonia, Piano Alto, Noto, Siracusa, Sicilia, 96017, Italia"
+    ]
+  },
+  "Chiesa di San Domenico, Siracusa, Sicilia, Italia": {
+    "status": "resolved",
+    "coordinates": {
+      "lat": 36.8921205,
+      "lon": 15.0681333,
+      "displayName": "Chiesa di San Domenico, Via Giovanni Bovio, Piano Alto, Noto, Siracusa, Sicilia, 96017, Italia",
+      "source": "OpenStreetMap Nominatim"
+    },
+    "candidates": [
+      "Chiesa di San Domenico, Via Giovanni Bovio, Piano Alto, Noto, Siracusa, Sicilia, 96017, Italia",
+      "Chiesa di San Domenico, Via Capitaneria, Augusta, Siracusa, Sicilia, 96011, Italia"
+    ]
+  },
+  "Via Corrado Nicolaci, Siracusa, Sicilia, Italia": {
+    "status": "resolved",
+    "coordinates": {
+      "lat": 36.8917277,
+      "lon": 15.0698673,
+      "displayName": "Via Corrado Nicolaci, Piano Alto, Noto, Siracusa, Sicilia, 96017, Italia",
+      "source": "OpenStreetMap Nominatim"
+    },
+    "candidates": [
+      "Via Corrado Nicolaci, Piano Alto, Noto, Siracusa, Sicilia, 96017, Italia"
+    ]
+  },
+  "Cattedrale di Noto, Siracusa, Sicilia, Italia": {
+    "status": "resolved",
+    "coordinates": {
+      "lat": 36.8916222,
+      "lon": 15.070927,
+      "displayName": "Cattedrale di San Nicolò, Via Camillo Benso Conte di Cavour, Piano Alto, Noto, Siracusa, Sicilia, 96017, Italia",
+      "source": "OpenStreetMap Nominatim"
+    },
+    "candidates": [
+      "Cattedrale di San Nicolò, Via Camillo Benso Conte di Cavour, Piano Alto, Noto, Siracusa, Sicilia, 96017, Italia",
+      "Chiosco della Cattedrale, Corso Vittorio Emanuele, Piano Alto, Noto, Siracusa, Sicilia, 96017, Italia"
+    ]
+  },
+  "Palazzo Ducezio, Siracusa, Sicilia, Italia": {
+    "status": "resolved",
+    "coordinates": {
+      "lat": 36.8907114,
+      "lon": 15.0705492,
+      "displayName": "Palazzo Ducezio, Corso Vittorio Emanuele, Piano Alto, Noto, Siracusa, Sicilia, 96017, Italia",
+      "source": "OpenStreetMap Nominatim"
+    },
+    "candidates": [
+      "Palazzo Ducezio, Corso Vittorio Emanuele, Piano Alto, Noto, Siracusa, Sicilia, 96017, Italia"
+    ]
+  },
+  "Chiesa dell’Immacolata, Siracusa, Sicilia, Italia": {
+    "status": "ambiguous",
+    "coordinates": null,
+    "candidates": [
+      "Chiesa dell'Immacolata, Corso Vittorio Emanuele Terzo, Palazzolo Acreide, Siracusa, Sicilia, 96010, Italia",
+      "Chiesa dell'Immacolata, Via San Giovanni Bosco, Villaggio Mantelli, Priolo Gargallo, Siracusa, Sicilia, 96010, Italia",
+      "Chiesa dell'Immacolata, Ronco Undicesimo di Via Roma, Carlentini Nord, Carlentini, Siracusa, Sicilia, 96013, Italia"
+    ]
+  },
+  "Porta Reale, Siracusa, Sicilia, Italia": {
+    "status": "resolved",
+    "coordinates": {
+      "lat": 36.8900497,
+      "lon": 15.073751,
+      "displayName": "Porta Reale, Corso Vittorio Emanuele, Piano Alto, Noto, Siracusa, Sicilia, 96017, Italia",
+      "source": "OpenStreetMap Nominatim"
+    },
+    "candidates": [
+      "Porta Reale, Corso Vittorio Emanuele, Piano Alto, Noto, Siracusa, Sicilia, 96017, Italia"
+    ]
+  },
+  "Vicolo delle sirene, Siracusa, Sicilia, Italia": {
+    "status": "unresolved",
+    "coordinates": null,
+    "candidates": []
+  },
+  "Piazza Regina Margherita, Siracusa, Sicilia, Italia": {
+    "status": "ambiguous",
+    "coordinates": null,
+    "candidates": [
+      "Piazza Regina Margherita, Avola, Siracusa, Sicilia, 96012, Italia",
+      "Piazza Regina Margherita, Marzamemi, Pachino, Siracusa, Sicilia, 96018, Italia"
+    ]
+  },
+  "Tonnara di Marzamemi, Siracusa, Sicilia, Italia": {
+    "status": "resolved",
+    "coordinates": {
+      "lat": 36.7416095,
+      "lon": 15.1187895,
+      "displayName": "Tonnara di Marzamemi, Vicolo Villa Dorata, Marzamemi, Pachino, Siracusa, Sicilia, 96018, Italia",
+      "source": "OpenStreetMap Nominatim"
+    },
+    "candidates": [
+      "Tonnara di Marzamemi, Vicolo Villa Dorata, Marzamemi, Pachino, Siracusa, Sicilia, 96018, Italia"
+    ]
+  },
+  "Cattedrale di San Giovanni Battista, Ragusa, Sicilia, Italia": {
+    "status": "resolved",
+    "coordinates": {
+      "lat": 36.9256729,
+      "lon": 14.7286819,
+      "displayName": "Cattedrale di San Giovanni Battista, Via Roma, Cappuccini, Ragusa Ibla, Ragusa, Sicilia, 97100, Italia",
+      "source": "OpenStreetMap Nominatim"
+    },
+    "candidates": [
+      "Cattedrale di San Giovanni Battista, Via Roma, Cappuccini, Ragusa Ibla, Ragusa, Sicilia, 97100, Italia"
+    ]
+  },
+  "Corso Italia con vicoli/chiese/palazzi, Ragusa, Sicilia, Italia": {
+    "status": "unresolved",
+    "coordinates": null,
+    "candidates": []
+  },
+  "Chiesa di Santa Maria delle Scale, Ragusa, Sicilia, Italia": {
+    "status": "resolved",
+    "coordinates": {
+      "lat": 36.9252236,
+      "lon": 14.7351567,
+      "displayName": "Chiesa di Santa Maria delle Scale, Via Santa Maria delle Scale, Cappuccini, Ragusa Ibla, Ragusa, Sicilia, 97100, Italia",
+      "source": "OpenStreetMap Nominatim"
+    },
+    "candidates": [
+      "Chiesa di Santa Maria delle Scale, Via Santa Maria delle Scale, Cappuccini, Ragusa Ibla, Ragusa, Sicilia, 97100, Italia"
+    ]
+  },
+  "Via delle Scale, Ragusa, Sicilia, Italia": {
+    "status": "resolved",
+    "coordinates": {
+      "lat": 36.9250198,
+      "lon": 14.7351968,
+      "displayName": "Via Santa Maria delle Scale, Cappuccini, Ragusa Ibla, Ragusa, Sicilia, 97100, Italia",
+      "source": "OpenStreetMap Nominatim"
+    },
+    "candidates": [
+      "Via Santa Maria delle Scale, Cappuccini, Ragusa Ibla, Ragusa, Sicilia, 97100, Italia"
+    ]
+  },
+  "Chiesa di Santa Maria dell’Itria, Ragusa, Sicilia, Italia": {
+    "status": "resolved",
+    "coordinates": {
+      "lat": 36.9267041,
+      "lon": 14.7362976,
+      "displayName": "Chiesa di Santa Maria dell'Itria, Salita Commendatore, Cappuccini, Ragusa Ibla, Ragusa, Sicilia, 97100, Italia",
+      "source": "OpenStreetMap Nominatim"
+    },
+    "candidates": [
+      "Chiesa di Santa Maria dell'Itria, Salita Commendatore, Cappuccini, Ragusa Ibla, Ragusa, Sicilia, 97100, Italia"
+    ]
+  },
+  "Palazzo della Cancelleria, Ragusa, Sicilia, Italia": {
+    "status": "resolved",
+    "coordinates": {
+      "lat": 36.9264936,
+      "lon": 14.7360191,
+      "displayName": "Palazzo della Cancelleria, Vico Evangelista, Cappuccini, Ragusa Ibla, Ragusa, Sicilia, 97100, Italia",
+      "source": "OpenStreetMap Nominatim"
+    },
+    "candidates": [
+      "Palazzo della Cancelleria, Vico Evangelista, Cappuccini, Ragusa Ibla, Ragusa, Sicilia, 97100, Italia"
+    ]
+  },
+  "Piazza Duomo Ragusa Ibla, Sicilia, Italia": {
+    "status": "resolved",
+    "coordinates": {
+      "lat": 36.9262793,
+      "lon": 14.743782,
+      "displayName": "Piazza Duomo, Ragusa Ibla, Ragusa, Sicilia, 97100, Italia",
+      "source": "OpenStreetMap Nominatim"
+    },
+    "candidates": [
+      "Piazza Duomo, Ragusa Ibla, Ragusa, Sicilia, 97100, Italia",
+      "Piazza Duomo, Ragusa Ibla, Ragusa, Sicilia, 97100, Italia",
+      "Piazza Duomo, Ragusa Ibla, Ragusa, Sicilia, 97100, Italia"
+    ]
+  },
+  "Duomo di San Giorgio Ragusa, Sicilia, Italia": {
+    "status": "ambiguous",
+    "coordinates": null,
+    "candidates": [
+      "Duomo di San Giorgio, Via Capitano Bocchieri, Cappuccini, Ragusa Ibla, Ragusa, Sicilia, 97100, Italia",
+      "Duomo di San Giorgio, Via Moncada, Dente, Modica Alta, Modica, Ragusa, Sicilia, Italia"
+    ]
+  },
+  "Circolo di Conversazione, Ragusa, Sicilia, Italia": {
+    "status": "resolved",
+    "coordinates": {
+      "lat": 36.9263715,
+      "lon": 14.7442526,
+      "displayName": "Circolo di Conversazione, Via Pietro Novelli, Ragusa Ibla, Ragusa, Sicilia, 97100, Italia",
+      "source": "OpenStreetMap Nominatim"
+    },
+    "candidates": [
+      "Circolo di Conversazione, Via Pietro Novelli, Ragusa Ibla, Ragusa, Sicilia, 97100, Italia"
+    ]
+  },
+  "Corso XXV aprile, Ragusa, Sicilia, Italia": {
+    "status": "resolved",
+    "coordinates": {
+      "lat": 36.9260882,
+      "lon": 14.7445557,
+      "displayName": "Corso Venticinque Aprile, Ragusa Ibla, Ragusa, Sicilia, 97100, Italia",
+      "source": "OpenStreetMap Nominatim"
+    },
+    "candidates": [
+      "Corso Venticinque Aprile, Ragusa Ibla, Ragusa, Sicilia, 97100, Italia"
+    ]
+  },
+  "Giardino Ibleo, Ragusa, Sicilia, Italia": {
+    "status": "resolved",
+    "coordinates": {
+      "lat": 36.9259794,
+      "lon": 14.7486699,
+      "displayName": "Giardino Ibleo, Ragusa Ibla, Ragusa, Sicilia, 97100, Italia",
+      "source": "OpenStreetMap Nominatim"
+    },
+    "candidates": [
+      "Giardino Ibleo, Ragusa Ibla, Ragusa, Sicilia, 97100, Italia",
+      "Giardino Ibleo, Viale delle Palme, Ragusa Ibla, Ragusa, Sicilia, 97100, Italia"
+    ]
+  },
+  "Duomo di San Giorgio Modica, Ragusa, Sicilia, Italia": {
+    "status": "resolved",
+    "coordinates": {
+      "lat": 36.8640819,
+      "lon": 14.7616739,
+      "displayName": "Duomo di San Giorgio, Via Moncada, Dente, Modica Alta, Modica, Ragusa, Sicilia, Italia",
+      "source": "OpenStreetMap Nominatim"
+    },
+    "candidates": [
+      "Duomo di San Giorgio, Via Moncada, Dente, Modica Alta, Modica, Ragusa, Sicilia, Italia"
+    ]
+  },
+  "Belvedere di San Benedetto, Ragusa, Sicilia, Italia": {
+    "status": "unresolved",
+    "coordinates": null,
+    "candidates": []
+  },
+  "Corso Umberto I Modica, Ragusa, Sicilia, Italia": {
+    "status": "resolved",
+    "coordinates": {
+      "lat": 36.865061,
+      "lon": 14.7583367,
+      "displayName": "Corso Umberto Primo, Dente, Modica Alta, Modica, Ragusa, Sicilia, Italia",
+      "source": "OpenStreetMap Nominatim"
+    },
+    "candidates": [
+      "Corso Umberto Primo, Dente, Modica Alta, Modica, Ragusa, Sicilia, Italia",
+      "Corso Umberto Primo, Modica Alta, Modica, Ragusa, Sicilia, Italia"
+    ]
+  },
+  "Duomo di San Pietro, Ragusa, Sicilia, Italia": {
+    "status": "resolved",
+    "coordinates": {
+      "lat": 36.8605955,
+      "lon": 14.7606786,
+      "displayName": "Duomo di San Pietro, Via Castello, Dente, Modica Alta, Modica, Ragusa, Sicilia, Italia",
+      "source": "OpenStreetMap Nominatim"
+    },
+    "candidates": [
+      "Duomo di San Pietro, Via Castello, Dente, Modica Alta, Modica, Ragusa, Sicilia, Italia"
+    ]
+  },
+  "Piazza Busacca, Ragusa, Sicilia, Italia": {
+    "status": "ambiguous",
+    "coordinates": null,
+    "candidates": [
+      "Piazza Busacca, Balata, Scicli, Ragusa, Sicilia, 97018, Italia",
+      "Piazza Matteo Busacca, Vittoria, Ragusa, Sicilia, 97019, Italia"
+    ]
+  },
+  "Via Penna, Ragusa, Sicilia, Italia": {
+    "status": "resolved",
+    "coordinates": {
+      "lat": 36.7927599,
+      "lon": 14.7074873,
+      "displayName": "Via Penna, Balata, Scicli, Ragusa, Sicilia, 97018, Italia",
+      "source": "OpenStreetMap Nominatim"
+    },
+    "candidates": [
+      "Via Penna, Balata, Scicli, Ragusa, Sicilia, 97018, Italia"
+    ]
+  },
+  "Chiesa di San Michele Arcangelo, Ragusa, Sicilia, Italia": {
+    "status": "unresolved",
+    "coordinates": null,
+    "candidates": []
+  },
+  "Antica Farmacia Cartia, Ragusa, Sicilia, Italia": {
+    "status": "unresolved",
+    "coordinates": null,
+    "candidates": []
+  },
+  "Chiesa di San Giovanni Evangelista (Cristo in gonnella), Ragusa, Sicilia, Italia": {
+    "status": "unresolved",
+    "coordinates": null,
+    "candidates": []
+  },
+  "Palazzo Beneventano, Ragusa, Sicilia, Italia": {
+    "status": "resolved",
+    "coordinates": {
+      "lat": 36.7932984,
+      "lon": 14.7075345,
+      "displayName": "Palazzo Beneventano, Via Giuseppe Zanardelli, Balata, Scicli, Ragusa, Sicilia, 97018, Italia",
+      "source": "OpenStreetMap Nominatim"
+    },
+    "candidates": [
+      "Palazzo Beneventano, Via Giuseppe Zanardelli, Balata, Scicli, Ragusa, Sicilia, 97018, Italia"
+    ]
+  },
+  "Piazza Italia, Ragusa, Sicilia, Italia": {
+    "status": "ambiguous",
+    "coordinates": null,
+    "candidates": [
+      "Piazza Italia, Modica Alta, Modica, Ragusa, Sicilia, Italia",
+      "Piazza Italia, Balata, Scicli, Ragusa, Sicilia, 97018, Italia",
+      "Piazza Italia, Vittoria, Ragusa, Sicilia, 97019, Italia"
+    ]
+  },
+  "Chiesa di San Ignazio di Loyola, Ragusa, Sicilia, Italia": {
+    "status": "unresolved",
+    "coordinates": null,
+    "candidates": []
+  },
+  "Chiesa di San Bartolomeo, Ragusa, Sicilia, Italia": {
+    "status": "resolved",
+    "coordinates": {
+      "lat": 36.7909302,
+      "lon": 14.7084098,
+      "displayName": "Chiesa di San Bartolomeo, Via Matarazzo, Balata, Scicli, Ragusa, Sicilia, 97018, Italia",
+      "source": "OpenStreetMap Nominatim"
+    },
+    "candidates": [
+      "Chiesa di San Bartolomeo, Via Matarazzo, Balata, Scicli, Ragusa, Sicilia, 97018, Italia",
+      "Chiesa di San Bartolomeo, Via Risorgimento, Cappuccini, Ragusa Ibla, Ragusa, Sicilia, 97100, Italia",
+      "Chiesa di San Bartolomeo, Via Ugo Foscolo, Ispica, Ragusa, Sicilia, 97014, Italia"
+    ]
+  },
+  "Statua Andrea Camilleri, Agrigento, Sicilia, Italia": {
+    "status": "unresolved",
+    "coordinates": null,
+    "candidates": []
+  },
+  "Basilica della Beata Vergine Maria, Agrigento, Sicilia, Italia": {
+    "status": "unresolved",
+    "coordinates": null,
+    "candidates": []
+  },
+  "Via Atenea, Agrigento, Sicilia, Italia": {
+    "status": "resolved",
+    "coordinates": {
+      "lat": 37.3110274,
+      "lon": 13.5817503,
+      "displayName": "Via Atenea, Bibirria, Calcarelle, Villaseta, Agrigento, Sicilia, 92100, Italia",
+      "source": "OpenStreetMap Nominatim"
+    },
+    "candidates": [
+      "Via Atenea, Bibirria, Calcarelle, Villaseta, Agrigento, Sicilia, 92100, Italia",
+      "Via Atenea, Rabato, Calcarelle, Villaseta, Agrigento, Sicilia, 92100, Italia",
+      "Via Atenea, Bibirria, Calcarelle, Villaseta, Agrigento, Sicilia, 92100, Italia"
+    ]
+  },
+  "Scala degli artisti, Agrigento, Sicilia, Italia": {
+    "status": "unresolved",
+    "coordinates": null,
+    "candidates": []
+  },
+  "Camera di Commercio, Agrigento, Sicilia, Italia": {
+    "status": "unresolved",
+    "coordinates": null,
+    "candidates": []
+  },
+  "Piazza del Municipio, Agrigento, Sicilia, Italia": {
+    "status": "unresolved",
+    "coordinates": null,
+    "candidates": []
+  },
+  "Teatro Pirandello, Agrigento, Sicilia, Italia": {
+    "status": "resolved",
+    "coordinates": {
+      "lat": 37.3119538,
+      "lon": 13.5770972,
+      "displayName": "Teatro Pirandello, 1, Piazza Luigi Pirandello, Rabato, Calcarelle, Villaseta, Agrigento, Sicilia, 92100, Italia",
+      "source": "OpenStreetMap Nominatim"
+    },
+    "candidates": [
+      "Teatro Pirandello, 1, Piazza Luigi Pirandello, Rabato, Calcarelle, Villaseta, Agrigento, Sicilia, 92100, Italia"
+    ]
+  },
+  "Cattedrale di San Gerlando, Agrigento, Sicilia, Italia": {
+    "status": "resolved",
+    "coordinates": {
+      "lat": 37.3140034,
+      "lon": 13.5763829,
+      "displayName": "Cattedrale di San Gerlando, Via Duomo, Bibirria, Calcarelle, Villaseta, Agrigento, Sicilia, 92100, Italia",
+      "source": "OpenStreetMap Nominatim"
+    },
+    "candidates": [
+      "Cattedrale di San Gerlando, Via Duomo, Bibirria, Calcarelle, Villaseta, Agrigento, Sicilia, 92100, Italia"
+    ]
+  }
+}

@@ -1,0 +1,2 @@
+import React from 'react';import{createRoot}from'react-dom/client';import'leaflet/dist/leaflet.css';import'./styles.css';import'./enhancements.css';import App from'./App';import NativeBridge from'./NativeBridge';
+createRoot(document.getElementById('root')!).render(<React.StrictMode><NativeBridge/><App/></React.StrictMode>);if('serviceWorker'in navigator&&!location.protocol.startsWith('capacitor'))window.addEventListener('load',()=>navigator.serviceWorker.register('/sw.js'));

@@ -1,0 +1,5 @@
+:8443 {
+    tls /certs/sicily.pem /certs/sicily-key.pem
+    reverse_proxy dashboard:8080
+}
+

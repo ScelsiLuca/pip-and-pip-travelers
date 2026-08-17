@@ -1,0 +1,1516 @@
+{
+  "source": "Sicily.pdf",
+  "sourceImportedAt": "2026-08-17",
+  "tripStartDate": "2026-08-21",
+  "tripEndDate": "2026-09-04",
+  "unscheduledNotes": [
+    "Trapani / Erice",
+    "Monreale / Palermo",
+    "Cefalù",
+    "Trapani - gelati e granite",
+    "Erice - gelati e granite"
+  ],
+  "days": [
+    {
+      "date": "2026-08-21",
+      "dayNumber": 1,
+      "title": "Catania",
+      "baseCity": "Catania",
+      "destinations": [
+        "Catania"
+      ],
+      "activityType": "city",
+      "activities": [
+        {
+          "title": "Visita di Catania",
+          "location": "Catania",
+          "start_time": null,
+          "end_time": null,
+          "activity_type": "city",
+          "status": "planned",
+          "notes": null,
+          "coordinates": {
+            "lat": 37.5079,
+            "lon": 15.083,
+            "source": "reviewed local catalog"
+          },
+          "sort_order": 0
+        }
+      ],
+      "pointsOfInterest": [
+        {
+          "name": "Via Crociferi (via delle chiese)",
+          "category": "poi",
+          "coordinates": null
+        },
+        {
+          "name": "Pescheria (mercato)",
+          "category": "poi",
+          "coordinates": null
+        },
+        {
+          "name": "Piazza del Duomo",
+          "category": "poi",
+          "coordinates": {
+            "lat": 37.5024076,
+            "lon": 15.0871898,
+            "displayName": "Piazza Duomo, Giudecca, Centro storico, Catania, Sicilia, Italia",
+            "source": "OpenStreetMap Nominatim"
+          }
+        },
+        {
+          "name": "Fontana dell'Elefante",
+          "category": "poi",
+          "coordinates": {
+            "lat": 37.5024904,
+            "lon": 15.0870913,
+            "displayName": "Fontana dell'Elefante, Via Vittorio Emanuele Secondo, Giudecca, Centro storico, Catania, Sicilia, 95124, Italia",
+            "source": "OpenStreetMap Nominatim"
+          }
+        },
+        {
+          "name": "Via Etnea",
+          "category": "poi",
+          "coordinates": null
+        },
+        {
+          "name": "Piazza Università",
+          "category": "poi",
+          "coordinates": {
+            "lat": 37.5036511,
+            "lon": 15.0871615,
+            "displayName": "Piazza dell'Università, Giudecca, Centro storico, Catania, Sicilia, Italia",
+            "source": "OpenStreetMap Nominatim"
+          }
+        },
+        {
+          "name": "Teatro Massimo Bellini",
+          "category": "poi",
+          "coordinates": {
+            "lat": 37.504157,
+            "lon": 15.0898267,
+            "displayName": "Teatro Massimo Bellini, Via Maria Callas, San Berillo, Centro storico, Catania, Sicilia, 95131, Italia",
+            "source": "OpenStreetMap Nominatim"
+          }
+        },
+        {
+          "name": "Giardino Bellini - Villa Bellini",
+          "category": "poi",
+          "coordinates": null
+        }
+      ],
+      "routes": [],
+      "notes": null,
+      "overnightLocation": null,
+      "coordinates": {
+        "lat": 37.5079,
+        "lon": 15.083,
+        "source": "reviewed local catalog"
+      },
+      "status": "planned"
+    },
+    {
+      "date": "2026-08-22",
+      "dayNumber": 2,
+      "title": "Taormina e mare",
+      "baseCity": "Taormina",
+      "destinations": [
+        "Taormina",
+        "Isola Bella"
+      ],
+      "activityType": "sea",
+      "activities": [
+        {
+          "title": "Visita di Taormina",
+          "location": "Taormina",
+          "start_time": null,
+          "end_time": null,
+          "activity_type": "city",
+          "status": "planned",
+          "notes": null,
+          "coordinates": {
+            "lat": 37.8516,
+            "lon": 15.2853,
+            "source": "reviewed local catalog"
+          },
+          "sort_order": 0
+        },
+        {
+          "title": "Mare a Isola Bella",
+          "location": "Isola Bella, Taormina",
+          "start_time": null,
+          "end_time": null,
+          "activity_type": "sea",
+          "status": "planned",
+          "notes": null,
+          "coordinates": {
+            "lat": 37.85,
+            "lon": 15.3016,
+            "source": "reviewed local catalog"
+          },
+          "sort_order": 1
+        }
+      ],
+      "pointsOfInterest": [
+        {
+          "name": "Duomo di Taormina",
+          "category": "poi",
+          "coordinates": {
+            "lat": 37.8510175,
+            "lon": 15.2830125,
+            "displayName": "Duomo, Vico Sacramento, Villagonia, Taormina, Messina, Sicilia, 98039, Italia",
+            "source": "OpenStreetMap Nominatim"
+          }
+        },
+        {
+          "name": "Corso Umberto",
+          "category": "poi",
+          "coordinates": {
+            "lat": 37.8516454,
+            "lon": 15.2857237,
+            "displayName": "Corso Umberto Primo, Villagonia, Taormina, Messina, Sicilia, 98039, Italia",
+            "source": "OpenStreetMap Nominatim"
+          }
+        },
+        {
+          "name": "Palazzo Corvaja",
+          "category": "poi",
+          "coordinates": {
+            "lat": 37.8539317,
+            "lon": 15.288518,
+            "displayName": "Palazzo Corvaja, Piazza Vittorio Emanuele Secondo, Spisone, Taormina, Messina, Sicilia, 98039, Italia",
+            "source": "OpenStreetMap Nominatim"
+          }
+        },
+        {
+          "name": "Villa Comunale",
+          "category": "poi",
+          "coordinates": {
+            "lat": 37.8509485,
+            "lon": 15.2899881,
+            "displayName": "Parco Villa Comunale di Lady Florence Trevelyan, Mazzarò, Taormina, Messina, Sicilia, 98039, Italia",
+            "source": "OpenStreetMap Nominatim"
+          }
+        },
+        {
+          "name": "Teatro Antico",
+          "category": "poi",
+          "coordinates": {
+            "lat": 37.8523709,
+            "lon": 15.2922708,
+            "displayName": "Teatro Greco, 1, Via Teatro Greco, Mazzarò, Taormina, Messina, Sicilia, 98039, Italia",
+            "source": "OpenStreetMap Nominatim"
+          }
+        },
+        {
+          "name": "Isola Bella",
+          "category": "poi",
+          "coordinates": {
+            "lat": 37.85,
+            "lon": 15.3016,
+            "source": "reviewed local catalog"
+          }
+        }
+      ],
+      "routes": [],
+      "notes": "+ mare",
+      "overnightLocation": null,
+      "coordinates": {
+        "lat": 37.8516,
+        "lon": 15.2853,
+        "source": "reviewed local catalog"
+      },
+      "status": "planned"
+    },
+    {
+      "date": "2026-08-23",
+      "dayNumber": 3,
+      "title": "Etna → Siracusa",
+      "baseCity": "Etna",
+      "destinations": [
+        "Etna",
+        "Siracusa"
+      ],
+      "activityType": "etna",
+      "activities": [
+        {
+          "title": "Escursione Etna",
+          "location": "Etna",
+          "start_time": null,
+          "end_time": null,
+          "activity_type": "etna",
+          "status": "planned",
+          "notes": null,
+          "coordinates": {
+            "lat": 37.751,
+            "lon": 14.9934,
+            "source": "reviewed local catalog"
+          },
+          "sort_order": 0
+        },
+        {
+          "title": "Trasferimento a Siracusa",
+          "location": "Siracusa",
+          "start_time": null,
+          "end_time": null,
+          "activity_type": "transfer",
+          "status": "planned",
+          "notes": null,
+          "coordinates": {
+            "lat": 37.0755,
+            "lon": 15.2866,
+            "source": "reviewed local catalog"
+          },
+          "sort_order": 1
+        }
+      ],
+      "pointsOfInterest": [],
+      "routes": [
+        {
+          "origin": "Etna",
+          "destination": "Siracusa",
+          "origin_coordinates": {
+            "lat": 37.751,
+            "lon": 14.9934,
+            "source": "reviewed local catalog"
+          },
+          "destination_coordinates": {
+            "lat": 37.0755,
+            "lon": 15.2866,
+            "source": "reviewed local catalog"
+          },
+          "planned_departure": null,
+          "planned_duration_minutes": null,
+          "distance_km": null
+        }
+      ],
+      "notes": "Escursione Etna, poi trasferimento a Siracusa.",
+      "overnightLocation": "Siracusa",
+      "coordinates": {
+        "lat": 37.751,
+        "lon": 14.9934,
+        "source": "reviewed local catalog"
+      },
+      "status": "planned"
+    },
+    {
+      "date": "2026-08-24",
+      "dayNumber": 4,
+      "title": "Siracusa e Ortigia",
+      "baseCity": "Siracusa",
+      "destinations": [
+        "Siracusa",
+        "Ortigia"
+      ],
+      "activityType": "archaeology",
+      "activities": [
+        {
+          "title": "Visita di Ortigia",
+          "location": "Ortigia, Siracusa",
+          "start_time": null,
+          "end_time": null,
+          "activity_type": "city",
+          "status": "planned",
+          "notes": null,
+          "coordinates": {
+            "lat": 37.0608,
+            "lon": 15.2934,
+            "source": "reviewed local catalog"
+          },
+          "sort_order": 0
+        },
+        {
+          "title": "Parco Archeologico Neapolis",
+          "location": "Siracusa",
+          "start_time": null,
+          "end_time": null,
+          "activity_type": "archaeology",
+          "status": "planned",
+          "notes": null,
+          "coordinates": {
+            "lat": 37.0755,
+            "lon": 15.2866,
+            "source": "reviewed local catalog"
+          },
+          "sort_order": 1
+        }
+      ],
+      "pointsOfInterest": [
+        {
+          "name": "Isola di Ortigia",
+          "category": "poi",
+          "coordinates": {
+            "lat": 37.0599973,
+            "lon": 15.2950175,
+            "displayName": "Isola di Ortigia, Siracusa, Sicilia, 96100, Italia",
+            "source": "OpenStreetMap Nominatim"
+          }
+        },
+        {
+          "name": "Lungomare Alfeo",
+          "category": "poi",
+          "coordinates": {
+            "lat": 37.0562723,
+            "lon": 15.2935298,
+            "displayName": "Lungomare Alfeo, Ortigia, Siracusa, Sicilia, 96100, Italia",
+            "source": "OpenStreetMap Nominatim"
+          }
+        },
+        {
+          "name": "Fonte Aretusa",
+          "category": "poi",
+          "coordinates": {
+            "lat": 37.0572691,
+            "lon": 15.2929132,
+            "displayName": "Fonte Aretusa, Ortigia, Siracusa, Sicilia, 96100, Italia",
+            "source": "OpenStreetMap Nominatim"
+          }
+        },
+        {
+          "name": "Fontana di Diana",
+          "category": "poi",
+          "coordinates": {
+            "lat": 37.0612494,
+            "lon": 15.29386,
+            "displayName": "Fontana di Diana, Corso Giacomo Matteotti, Ortigia, Siracusa, Sicilia, 96100, Italia",
+            "source": "OpenStreetMap Nominatim"
+          }
+        },
+        {
+          "name": "Piazza Duomo",
+          "category": "poi",
+          "coordinates": null
+        },
+        {
+          "name": "Cattedrale di Siracusa",
+          "category": "poi",
+          "coordinates": {
+            "lat": 37.0595851,
+            "lon": 15.293823,
+            "displayName": "Cattedrale di Siracusa, Piazza Minerva, Ortigia, Siracusa, Sicilia, 96100, Italia",
+            "source": "OpenStreetMap Nominatim"
+          }
+        },
+        {
+          "name": "Tempio di Apollo",
+          "category": "poi",
+          "coordinates": {
+            "lat": 37.0640302,
+            "lon": 15.2930187,
+            "displayName": "Tempio di Apollo, Via del Mercato, Ortigia, Siracusa, Sicilia, 96100, Italia",
+            "source": "OpenStreetMap Nominatim"
+          }
+        },
+        {
+          "name": "Parco Archeologico Neapolis",
+          "category": "poi",
+          "coordinates": null
+        },
+        {
+          "name": "Orecchio di Dionisio",
+          "category": "poi",
+          "coordinates": {
+            "lat": 37.0763431,
+            "lon": 15.2755183,
+            "displayName": "Orecchio di Dionisio, Viale Giulio Emanuele Rizzo, Neapolis, Siracusa, Sicilia, 96100, Italia",
+            "source": "OpenStreetMap Nominatim"
+          }
+        },
+        {
+          "name": "Teatro greco",
+          "category": "poi",
+          "coordinates": {
+            "lat": 37.0760111,
+            "lon": 15.275025,
+            "displayName": "Teatro Greco, Via dei Sepolcri, Neapolis, Siracusa, Sicilia, 96100, Italia",
+            "source": "OpenStreetMap Nominatim"
+          }
+        },
+        {
+          "name": "Santuario Madonna delle Lacrime",
+          "category": "poi",
+          "coordinates": {
+            "lat": 37.0747184,
+            "lon": 15.2855218,
+            "displayName": "Basilica Santuario della Madonna delle Lacrime, Viale Teocrito, Santa Lucia, Siracusa, Sicilia, 96100, Italia",
+            "source": "OpenStreetMap Nominatim"
+          }
+        }
+      ],
+      "routes": [],
+      "notes": null,
+      "overnightLocation": null,
+      "coordinates": {
+        "lat": 37.0755,
+        "lon": 15.2866,
+        "source": "reviewed local catalog"
+      },
+      "status": "planned"
+    },
+    {
+      "date": "2026-08-25",
+      "dayNumber": 5,
+      "title": "Pillirina, Noto e Marzamemi",
+      "baseCity": "Siracusa",
+      "destinations": [
+        "Pillirina",
+        "Noto",
+        "Marzamemi"
+      ],
+      "activityType": "boat_trip",
+      "activities": [
+        {
+          "title": "Pillirina boat tour",
+          "location": "Pillirina",
+          "start_time": null,
+          "end_time": null,
+          "activity_type": "boat_trip",
+          "status": "planned",
+          "notes": null,
+          "coordinates": {
+            "lat": 37.0003,
+            "lon": 15.3305,
+            "source": "reviewed local catalog"
+          },
+          "sort_order": 0
+        },
+        {
+          "title": "Visita di Noto",
+          "location": "Noto",
+          "start_time": null,
+          "end_time": null,
+          "activity_type": "city",
+          "status": "planned",
+          "notes": null,
+          "coordinates": {
+            "lat": 36.8918,
+            "lon": 15.0707,
+            "source": "reviewed local catalog"
+          },
+          "sort_order": 1
+        },
+        {
+          "title": "Marzamemi al tramonto",
+          "location": "Marzamemi",
+          "start_time": null,
+          "end_time": null,
+          "activity_type": "sea",
+          "status": "planned",
+          "notes": "Tramonto",
+          "coordinates": {
+            "lat": 36.7422,
+            "lon": 15.1174,
+            "source": "reviewed local catalog"
+          },
+          "sort_order": 2
+        }
+      ],
+      "pointsOfInterest": [
+        {
+          "name": "Pillirina",
+          "category": "poi",
+          "coordinates": {
+            "lat": 37.0003,
+            "lon": 15.3305,
+            "source": "reviewed local catalog"
+          }
+        },
+        {
+          "name": "Teatro Comunale Tina di Lorenzo",
+          "category": "poi",
+          "coordinates": {
+            "lat": 36.8912168,
+            "lon": 15.0676728,
+            "displayName": "Teatro comunale Tina Di Lorenzo, Vico Salonia, Piano Alto, Noto, Siracusa, Sicilia, 96017, Italia",
+            "source": "OpenStreetMap Nominatim"
+          }
+        },
+        {
+          "name": "Chiesa di San Domenico",
+          "category": "poi",
+          "coordinates": {
+            "lat": 36.8921205,
+            "lon": 15.0681333,
+            "displayName": "Chiesa di San Domenico, Via Giovanni Bovio, Piano Alto, Noto, Siracusa, Sicilia, 96017, Italia",
+            "source": "OpenStreetMap Nominatim"
+          }
+        },
+        {
+          "name": "Via Corrado Nicolaci",
+          "category": "poi",
+          "coordinates": {
+            "lat": 36.8917277,
+            "lon": 15.0698673,
+            "displayName": "Via Corrado Nicolaci, Piano Alto, Noto, Siracusa, Sicilia, 96017, Italia",
+            "source": "OpenStreetMap Nominatim"
+          }
+        },
+        {
+          "name": "Cattedrale di Noto",
+          "category": "poi",
+          "coordinates": {
+            "lat": 36.8916222,
+            "lon": 15.070927,
+            "displayName": "Cattedrale di San Nicolò, Via Camillo Benso Conte di Cavour, Piano Alto, Noto, Siracusa, Sicilia, 96017, Italia",
+            "source": "OpenStreetMap Nominatim"
+          }
+        },
+        {
+          "name": "Palazzo Ducezio",
+          "category": "poi",
+          "coordinates": {
+            "lat": 36.8907114,
+            "lon": 15.0705492,
+            "displayName": "Palazzo Ducezio, Corso Vittorio Emanuele, Piano Alto, Noto, Siracusa, Sicilia, 96017, Italia",
+            "source": "OpenStreetMap Nominatim"
+          }
+        },
+        {
+          "name": "Chiesa dell’Immacolata",
+          "category": "poi",
+          "coordinates": null
+        },
+        {
+          "name": "Porta Reale",
+          "category": "poi",
+          "coordinates": {
+            "lat": 36.8900497,
+            "lon": 15.073751,
+            "displayName": "Porta Reale, Corso Vittorio Emanuele, Piano Alto, Noto, Siracusa, Sicilia, 96017, Italia",
+            "source": "OpenStreetMap Nominatim"
+          }
+        },
+        {
+          "name": "Vicolo delle sirene",
+          "category": "poi",
+          "coordinates": null
+        },
+        {
+          "name": "Piazza Regina Margherita",
+          "category": "poi",
+          "coordinates": null
+        },
+        {
+          "name": "Tonnara di Marzamemi",
+          "category": "poi",
+          "coordinates": {
+            "lat": 36.7416095,
+            "lon": 15.1187895,
+            "displayName": "Tonnara di Marzamemi, Vicolo Villa Dorata, Marzamemi, Pachino, Siracusa, Sicilia, 96018, Italia",
+            "source": "OpenStreetMap Nominatim"
+          }
+        }
+      ],
+      "routes": [
+        {
+          "origin": "Pillirina",
+          "destination": "Noto",
+          "origin_coordinates": {
+            "lat": 37.0003,
+            "lon": 15.3305,
+            "source": "reviewed local catalog"
+          },
+          "destination_coordinates": {
+            "lat": 36.8918,
+            "lon": 15.0707,
+            "source": "reviewed local catalog"
+          },
+          "planned_departure": null,
+          "planned_duration_minutes": null,
+          "distance_km": null
+        },
+        {
+          "origin": "Noto",
+          "destination": "Marzamemi",
+          "origin_coordinates": {
+            "lat": 36.8918,
+            "lon": 15.0707,
+            "source": "reviewed local catalog"
+          },
+          "destination_coordinates": {
+            "lat": 36.7422,
+            "lon": 15.1174,
+            "source": "reviewed local catalog"
+          },
+          "planned_departure": null,
+          "planned_duration_minutes": null,
+          "distance_km": null
+        }
+      ],
+      "notes": "Marzamemi al tramonto.",
+      "overnightLocation": null,
+      "coordinates": {
+        "lat": 37.0755,
+        "lon": 15.2866,
+        "source": "reviewed local catalog"
+      },
+      "status": "planned"
+    },
+    {
+      "date": "2026-08-26",
+      "dayNumber": 6,
+      "title": "Ragusa, Modica e Scicli → Agrigento",
+      "baseCity": "Ragusa",
+      "destinations": [
+        "Ragusa",
+        "Ragusa Ibla",
+        "Modica",
+        "Scicli",
+        "Agrigento",
+        "Valle dei Templi"
+      ],
+      "activityType": "road_trip",
+      "activities": [
+        {
+          "title": "Ragusa e Ibla",
+          "location": "Ragusa",
+          "start_time": null,
+          "end_time": null,
+          "activity_type": "city",
+          "status": "planned",
+          "notes": null,
+          "coordinates": {
+            "lat": 36.9269,
+            "lon": 14.7255,
+            "source": "reviewed local catalog"
+          },
+          "sort_order": 0
+        },
+        {
+          "title": "Visita di Modica",
+          "location": "Modica",
+          "start_time": null,
+          "end_time": null,
+          "activity_type": "city",
+          "status": "planned",
+          "notes": null,
+          "coordinates": {
+            "lat": 36.8588,
+            "lon": 14.7608,
+            "source": "reviewed local catalog"
+          },
+          "sort_order": 1
+        },
+        {
+          "title": "Visita di Scicli",
+          "location": "Scicli",
+          "start_time": null,
+          "end_time": null,
+          "activity_type": "city",
+          "status": "planned",
+          "notes": null,
+          "coordinates": {
+            "lat": 36.7901,
+            "lon": 14.704,
+            "source": "reviewed local catalog"
+          },
+          "sort_order": 2
+        },
+        {
+          "title": "Trasferimento ad Agrigento",
+          "location": "Agrigento",
+          "start_time": null,
+          "end_time": null,
+          "activity_type": "transfer",
+          "status": "planned",
+          "notes": null,
+          "coordinates": {
+            "lat": 37.3111,
+            "lon": 13.5765,
+            "source": "reviewed local catalog"
+          },
+          "sort_order": 3
+        },
+        {
+          "title": "Valle dei Templi",
+          "location": "Agrigento",
+          "start_time": null,
+          "end_time": null,
+          "activity_type": "archaeology",
+          "status": "planned",
+          "notes": null,
+          "coordinates": {
+            "lat": 37.3111,
+            "lon": 13.5765,
+            "source": "reviewed local catalog"
+          },
+          "sort_order": 4
+        }
+      ],
+      "pointsOfInterest": [
+        {
+          "name": "Cattedrale di San Giovanni Battista",
+          "category": "poi",
+          "coordinates": {
+            "lat": 36.9256729,
+            "lon": 14.7286819,
+            "displayName": "Cattedrale di San Giovanni Battista, Via Roma, Cappuccini, Ragusa Ibla, Ragusa, Sicilia, 97100, Italia",
+            "source": "OpenStreetMap Nominatim"
+          }
+        },
+        {
+          "name": "Corso Italia con vicoli/chiese/palazzi",
+          "category": "poi",
+          "coordinates": null
+        },
+        {
+          "name": "Chiesa di Santa Maria delle Scale",
+          "category": "poi",
+          "coordinates": {
+            "lat": 36.9252236,
+            "lon": 14.7351567,
+            "displayName": "Chiesa di Santa Maria delle Scale, Via Santa Maria delle Scale, Cappuccini, Ragusa Ibla, Ragusa, Sicilia, 97100, Italia",
+            "source": "OpenStreetMap Nominatim"
+          }
+        },
+        {
+          "name": "Via delle Scale",
+          "category": "poi",
+          "coordinates": {
+            "lat": 36.9250198,
+            "lon": 14.7351968,
+            "displayName": "Via Santa Maria delle Scale, Cappuccini, Ragusa Ibla, Ragusa, Sicilia, 97100, Italia",
+            "source": "OpenStreetMap Nominatim"
+          }
+        },
+        {
+          "name": "Chiesa di Santa Maria dell’Itria",
+          "category": "poi",
+          "coordinates": {
+            "lat": 36.9267041,
+            "lon": 14.7362976,
+            "displayName": "Chiesa di Santa Maria dell'Itria, Salita Commendatore, Cappuccini, Ragusa Ibla, Ragusa, Sicilia, 97100, Italia",
+            "source": "OpenStreetMap Nominatim"
+          }
+        },
+        {
+          "name": "Ragusa Ibla",
+          "category": "poi",
+          "coordinates": {
+            "lat": 36.925,
+            "lon": 14.7413,
+            "source": "reviewed local catalog"
+          }
+        },
+        {
+          "name": "Palazzo della Cancelleria",
+          "category": "poi",
+          "coordinates": {
+            "lat": 36.9264936,
+            "lon": 14.7360191,
+            "displayName": "Palazzo della Cancelleria, Vico Evangelista, Cappuccini, Ragusa Ibla, Ragusa, Sicilia, 97100, Italia",
+            "source": "OpenStreetMap Nominatim"
+          }
+        },
+        {
+          "name": "Piazza Duomo Ragusa Ibla",
+          "category": "poi",
+          "coordinates": {
+            "lat": 36.9262793,
+            "lon": 14.743782,
+            "displayName": "Piazza Duomo, Ragusa Ibla, Ragusa, Sicilia, 97100, Italia",
+            "source": "OpenStreetMap Nominatim"
+          }
+        },
+        {
+          "name": "Duomo di San Giorgio Ragusa",
+          "category": "poi",
+          "coordinates": null
+        },
+        {
+          "name": "Circolo di Conversazione",
+          "category": "poi",
+          "coordinates": {
+            "lat": 36.9263715,
+            "lon": 14.7442526,
+            "displayName": "Circolo di Conversazione, Via Pietro Novelli, Ragusa Ibla, Ragusa, Sicilia, 97100, Italia",
+            "source": "OpenStreetMap Nominatim"
+          }
+        },
+        {
+          "name": "Corso XXV aprile",
+          "category": "poi",
+          "coordinates": {
+            "lat": 36.9260882,
+            "lon": 14.7445557,
+            "displayName": "Corso Venticinque Aprile, Ragusa Ibla, Ragusa, Sicilia, 97100, Italia",
+            "source": "OpenStreetMap Nominatim"
+          }
+        },
+        {
+          "name": "Giardino Ibleo",
+          "category": "poi",
+          "coordinates": {
+            "lat": 36.9259794,
+            "lon": 14.7486699,
+            "displayName": "Giardino Ibleo, Ragusa Ibla, Ragusa, Sicilia, 97100, Italia",
+            "source": "OpenStreetMap Nominatim"
+          }
+        },
+        {
+          "name": "Duomo di San Giorgio Modica",
+          "category": "poi",
+          "coordinates": {
+            "lat": 36.8640819,
+            "lon": 14.7616739,
+            "displayName": "Duomo di San Giorgio, Via Moncada, Dente, Modica Alta, Modica, Ragusa, Sicilia, Italia",
+            "source": "OpenStreetMap Nominatim"
+          }
+        },
+        {
+          "name": "Belvedere di San Benedetto",
+          "category": "poi",
+          "coordinates": null
+        },
+        {
+          "name": "Corso Umberto I Modica",
+          "category": "poi",
+          "coordinates": {
+            "lat": 36.865061,
+            "lon": 14.7583367,
+            "displayName": "Corso Umberto Primo, Dente, Modica Alta, Modica, Ragusa, Sicilia, Italia",
+            "source": "OpenStreetMap Nominatim"
+          }
+        },
+        {
+          "name": "Duomo di San Pietro",
+          "category": "poi",
+          "coordinates": {
+            "lat": 36.8605955,
+            "lon": 14.7606786,
+            "displayName": "Duomo di San Pietro, Via Castello, Dente, Modica Alta, Modica, Ragusa, Sicilia, Italia",
+            "source": "OpenStreetMap Nominatim"
+          }
+        },
+        {
+          "name": "Piazza Busacca",
+          "category": "poi",
+          "coordinates": null
+        },
+        {
+          "name": "Via Penna",
+          "category": "poi",
+          "coordinates": {
+            "lat": 36.7927599,
+            "lon": 14.7074873,
+            "displayName": "Via Penna, Balata, Scicli, Ragusa, Sicilia, 97018, Italia",
+            "source": "OpenStreetMap Nominatim"
+          }
+        },
+        {
+          "name": "Chiesa di San Michele Arcangelo",
+          "category": "poi",
+          "coordinates": null
+        },
+        {
+          "name": "Antica Farmacia Cartia",
+          "category": "poi",
+          "coordinates": null
+        },
+        {
+          "name": "Chiesa di San Giovanni Evangelista (Cristo in gonnella)",
+          "category": "poi",
+          "coordinates": null
+        },
+        {
+          "name": "Palazzo Beneventano",
+          "category": "poi",
+          "coordinates": {
+            "lat": 36.7932984,
+            "lon": 14.7075345,
+            "displayName": "Palazzo Beneventano, Via Giuseppe Zanardelli, Balata, Scicli, Ragusa, Sicilia, 97018, Italia",
+            "source": "OpenStreetMap Nominatim"
+          }
+        },
+        {
+          "name": "Piazza Italia",
+          "category": "poi",
+          "coordinates": null
+        },
+        {
+          "name": "Chiesa di San Ignazio di Loyola",
+          "category": "poi",
+          "coordinates": null
+        },
+        {
+          "name": "Chiesa di San Bartolomeo",
+          "category": "poi",
+          "coordinates": {
+            "lat": 36.7909302,
+            "lon": 14.7084098,
+            "displayName": "Chiesa di San Bartolomeo, Via Matarazzo, Balata, Scicli, Ragusa, Sicilia, 97018, Italia",
+            "source": "OpenStreetMap Nominatim"
+          }
+        },
+        {
+          "name": "Valle dei Templi",
+          "category": "poi",
+          "coordinates": {
+            "lat": 37.2907,
+            "lon": 13.5852,
+            "source": "reviewed local catalog"
+          }
+        }
+      ],
+      "routes": [
+        {
+          "origin": "Ragusa",
+          "destination": "Modica",
+          "origin_coordinates": {
+            "lat": 36.9269,
+            "lon": 14.7255,
+            "source": "reviewed local catalog"
+          },
+          "destination_coordinates": {
+            "lat": 36.8588,
+            "lon": 14.7608,
+            "source": "reviewed local catalog"
+          },
+          "planned_departure": null,
+          "planned_duration_minutes": null,
+          "distance_km": null
+        },
+        {
+          "origin": "Modica",
+          "destination": "Scicli",
+          "origin_coordinates": {
+            "lat": 36.8588,
+            "lon": 14.7608,
+            "source": "reviewed local catalog"
+          },
+          "destination_coordinates": {
+            "lat": 36.7901,
+            "lon": 14.704,
+            "source": "reviewed local catalog"
+          },
+          "planned_departure": null,
+          "planned_duration_minutes": null,
+          "distance_km": null
+        },
+        {
+          "origin": "Scicli",
+          "destination": "Agrigento",
+          "origin_coordinates": {
+            "lat": 36.7901,
+            "lon": 14.704,
+            "source": "reviewed local catalog"
+          },
+          "destination_coordinates": {
+            "lat": 37.3111,
+            "lon": 13.5765,
+            "source": "reviewed local catalog"
+          },
+          "planned_departure": null,
+          "planned_duration_minutes": null,
+          "distance_km": null
+        }
+      ],
+      "notes": "Dopo Scicli trasferimento ad Agrigento; Valle dei Templi indicata nel PDF dopo il trasferimento.",
+      "overnightLocation": "Agrigento",
+      "coordinates": {
+        "lat": 36.9269,
+        "lon": 14.7255,
+        "source": "reviewed local catalog"
+      },
+      "status": "planned"
+    },
+    {
+      "date": "2026-08-27",
+      "dayNumber": 7,
+      "title": "Agrigento e Scala dei Turchi",
+      "baseCity": "Agrigento",
+      "destinations": [
+        "Agrigento",
+        "Scala dei Turchi"
+      ],
+      "activityType": "city",
+      "activities": [
+        {
+          "title": "Visita di Agrigento",
+          "location": "Agrigento",
+          "start_time": null,
+          "end_time": null,
+          "activity_type": "city",
+          "status": "planned",
+          "notes": null,
+          "coordinates": {
+            "lat": 37.3111,
+            "lon": 13.5765,
+            "source": "reviewed local catalog"
+          },
+          "sort_order": 0
+        },
+        {
+          "title": "Scala dei Turchi",
+          "location": "Scala dei Turchi",
+          "start_time": null,
+          "end_time": null,
+          "activity_type": "sea",
+          "status": "planned",
+          "notes": null,
+          "coordinates": {
+            "lat": 37.289,
+            "lon": 13.4722,
+            "source": "reviewed local catalog"
+          },
+          "sort_order": 1
+        }
+      ],
+      "pointsOfInterest": [
+        {
+          "name": "Statua Andrea Camilleri",
+          "category": "poi",
+          "coordinates": null
+        },
+        {
+          "name": "Basilica della Beata Vergine Maria",
+          "category": "poi",
+          "coordinates": null
+        },
+        {
+          "name": "Via Atenea",
+          "category": "poi",
+          "coordinates": {
+            "lat": 37.3110274,
+            "lon": 13.5817503,
+            "displayName": "Via Atenea, Bibirria, Calcarelle, Villaseta, Agrigento, Sicilia, 92100, Italia",
+            "source": "OpenStreetMap Nominatim"
+          }
+        },
+        {
+          "name": "Scala degli artisti",
+          "category": "poi",
+          "coordinates": null
+        },
+        {
+          "name": "Camera di Commercio",
+          "category": "poi",
+          "coordinates": null
+        },
+        {
+          "name": "Piazza del Municipio",
+          "category": "poi",
+          "coordinates": null
+        },
+        {
+          "name": "Teatro Pirandello",
+          "category": "poi",
+          "coordinates": {
+            "lat": 37.3119538,
+            "lon": 13.5770972,
+            "displayName": "Teatro Pirandello, 1, Piazza Luigi Pirandello, Rabato, Calcarelle, Villaseta, Agrigento, Sicilia, 92100, Italia",
+            "source": "OpenStreetMap Nominatim"
+          }
+        },
+        {
+          "name": "Cattedrale di San Gerlando",
+          "category": "poi",
+          "coordinates": {
+            "lat": 37.3140034,
+            "lon": 13.5763829,
+            "displayName": "Cattedrale di San Gerlando, Via Duomo, Bibirria, Calcarelle, Villaseta, Agrigento, Sicilia, 92100, Italia",
+            "source": "OpenStreetMap Nominatim"
+          }
+        },
+        {
+          "name": "Scala dei Turchi",
+          "category": "poi",
+          "coordinates": {
+            "lat": 37.289,
+            "lon": 13.4722,
+            "source": "reviewed local catalog"
+          }
+        }
+      ],
+      "routes": [
+        {
+          "origin": "Agrigento",
+          "destination": "Scala dei Turchi",
+          "origin_coordinates": {
+            "lat": 37.3111,
+            "lon": 13.5765,
+            "source": "reviewed local catalog"
+          },
+          "destination_coordinates": {
+            "lat": 37.289,
+            "lon": 13.4722,
+            "source": "reviewed local catalog"
+          },
+          "planned_departure": null,
+          "planned_duration_minutes": null,
+          "distance_km": null
+        }
+      ],
+      "notes": null,
+      "overnightLocation": null,
+      "coordinates": {
+        "lat": 37.3111,
+        "lon": 13.5765,
+        "source": "reviewed local catalog"
+      },
+      "status": "planned"
+    },
+    {
+      "date": "2026-08-28",
+      "dayNumber": 8,
+      "title": "Gibellina e Trapani",
+      "baseCity": "Agrigento",
+      "destinations": [
+        "Gibellina",
+        "Cretto di Burri",
+        "Trapani"
+      ],
+      "activityType": "road_trip",
+      "activities": [
+        {
+          "title": "Gibellina e Cretto di Burri",
+          "location": "Gibellina",
+          "start_time": null,
+          "end_time": null,
+          "activity_type": "city",
+          "status": "planned",
+          "notes": null,
+          "coordinates": {
+            "lat": 37.8087,
+            "lon": 12.8704,
+            "source": "reviewed local catalog"
+          },
+          "sort_order": 0
+        },
+        {
+          "title": "Trapani",
+          "location": "Trapani",
+          "start_time": null,
+          "end_time": null,
+          "activity_type": "transfer",
+          "status": "planned",
+          "notes": null,
+          "coordinates": {
+            "lat": 38.0176,
+            "lon": 12.5365,
+            "source": "reviewed local catalog"
+          },
+          "sort_order": 1
+        }
+      ],
+      "pointsOfInterest": [
+        {
+          "name": "Gibellina",
+          "category": "poi",
+          "coordinates": {
+            "lat": 37.8087,
+            "lon": 12.8704,
+            "source": "reviewed local catalog"
+          }
+        },
+        {
+          "name": "Cretto di Burri",
+          "category": "poi",
+          "coordinates": {
+            "lat": 37.7206,
+            "lon": 12.8906,
+            "source": "reviewed local catalog"
+          }
+        },
+        {
+          "name": "Trapani",
+          "category": "poi",
+          "coordinates": {
+            "lat": 38.0176,
+            "lon": 12.5365,
+            "source": "reviewed local catalog"
+          }
+        }
+      ],
+      "routes": [
+        {
+          "origin": "Agrigento",
+          "destination": "Gibellina",
+          "origin_coordinates": {
+            "lat": 37.3111,
+            "lon": 13.5765,
+            "source": "reviewed local catalog"
+          },
+          "destination_coordinates": {
+            "lat": 37.8087,
+            "lon": 12.8704,
+            "source": "reviewed local catalog"
+          },
+          "planned_departure": null,
+          "planned_duration_minutes": null,
+          "distance_km": null
+        },
+        {
+          "origin": "Gibellina",
+          "destination": "Trapani",
+          "origin_coordinates": {
+            "lat": 37.8087,
+            "lon": 12.8704,
+            "source": "reviewed local catalog"
+          },
+          "destination_coordinates": {
+            "lat": 38.0176,
+            "lon": 12.5365,
+            "source": "reviewed local catalog"
+          },
+          "planned_departure": null,
+          "planned_duration_minutes": null,
+          "distance_km": null
+        }
+      ],
+      "notes": null,
+      "overnightLocation": "Trapani",
+      "coordinates": {
+        "lat": 37.3111,
+        "lon": 13.5765,
+        "source": "reviewed local catalog"
+      },
+      "status": "planned"
+    },
+    {
+      "date": "2026-08-29",
+      "dayNumber": 9,
+      "title": null,
+      "baseCity": "Trapani",
+      "destinations": [],
+      "activityType": "free_time",
+      "activities": [],
+      "pointsOfInterest": [],
+      "routes": [],
+      "notes": "Nessuna attività assegnata nel PDF.",
+      "overnightLocation": null,
+      "coordinates": {
+        "lat": 38.0176,
+        "lon": 12.5365,
+        "source": "reviewed local catalog"
+      },
+      "status": "planned"
+    },
+    {
+      "date": "2026-08-30",
+      "dayNumber": 10,
+      "title": "Boat tour Favignana",
+      "baseCity": "Trapani",
+      "destinations": [
+        "Favignana"
+      ],
+      "activityType": "boat_trip",
+      "activities": [
+        {
+          "title": "Boat tour Favignana",
+          "location": "Favignana",
+          "start_time": null,
+          "end_time": null,
+          "activity_type": "boat_trip",
+          "status": "planned",
+          "notes": null,
+          "coordinates": {
+            "lat": 37.9307,
+            "lon": 12.3291,
+            "source": "reviewed local catalog"
+          },
+          "sort_order": 0
+        }
+      ],
+      "pointsOfInterest": [
+        {
+          "name": "Favignana",
+          "category": "poi",
+          "coordinates": {
+            "lat": 37.9307,
+            "lon": 12.3291,
+            "source": "reviewed local catalog"
+          }
+        }
+      ],
+      "routes": [],
+      "notes": null,
+      "overnightLocation": null,
+      "coordinates": {
+        "lat": 38.0176,
+        "lon": 12.5365,
+        "source": "reviewed local catalog"
+      },
+      "status": "planned"
+    },
+    {
+      "date": "2026-08-31",
+      "dayNumber": 11,
+      "title": "San Vito Lo Capo",
+      "baseCity": "Trapani",
+      "destinations": [
+        "San Vito Lo Capo"
+      ],
+      "activityType": "sea",
+      "activities": [
+        {
+          "title": "San Vito Lo Capo",
+          "location": "San Vito Lo Capo",
+          "start_time": null,
+          "end_time": null,
+          "activity_type": "sea",
+          "status": "planned",
+          "notes": null,
+          "coordinates": {
+            "lat": 38.1755,
+            "lon": 12.7356,
+            "source": "reviewed local catalog"
+          },
+          "sort_order": 0
+        }
+      ],
+      "pointsOfInterest": [
+        {
+          "name": "San Vito Lo Capo",
+          "category": "poi",
+          "coordinates": {
+            "lat": 38.1755,
+            "lon": 12.7356,
+            "source": "reviewed local catalog"
+          }
+        }
+      ],
+      "routes": [
+        {
+          "origin": "Trapani",
+          "destination": "San Vito Lo Capo",
+          "origin_coordinates": {
+            "lat": 38.0176,
+            "lon": 12.5365,
+            "source": "reviewed local catalog"
+          },
+          "destination_coordinates": {
+            "lat": 38.1755,
+            "lon": 12.7356,
+            "source": "reviewed local catalog"
+          },
+          "planned_departure": null,
+          "planned_duration_minutes": null,
+          "distance_km": null
+        }
+      ],
+      "notes": null,
+      "overnightLocation": null,
+      "coordinates": {
+        "lat": 38.0176,
+        "lon": 12.5365,
+        "source": "reviewed local catalog"
+      },
+      "status": "planned"
+    },
+    {
+      "date": "2026-09-01",
+      "dayNumber": 12,
+      "title": null,
+      "baseCity": "Trapani",
+      "destinations": [],
+      "activityType": "free_time",
+      "activities": [],
+      "pointsOfInterest": [],
+      "routes": [],
+      "notes": "Nessuna attività assegnata nel PDF.",
+      "overnightLocation": null,
+      "coordinates": {
+        "lat": 38.0176,
+        "lon": 12.5365,
+        "source": "reviewed local catalog"
+      },
+      "status": "planned"
+    },
+    {
+      "date": "2026-09-02",
+      "dayNumber": 13,
+      "title": "Riserva dello Zingaro",
+      "baseCity": "Trapani",
+      "destinations": [
+        "Riserva dello Zingaro"
+      ],
+      "activityType": "hiking",
+      "activities": [
+        {
+          "title": "Riserva dello Zingaro",
+          "location": "Riserva dello Zingaro",
+          "start_time": null,
+          "end_time": null,
+          "activity_type": "hiking",
+          "status": "planned",
+          "notes": null,
+          "coordinates": {
+            "lat": 38.124,
+            "lon": 12.789,
+            "source": "reviewed local catalog"
+          },
+          "sort_order": 0
+        }
+      ],
+      "pointsOfInterest": [
+        {
+          "name": "Riserva dello Zingaro",
+          "category": "poi",
+          "coordinates": {
+            "lat": 38.124,
+            "lon": 12.789,
+            "source": "reviewed local catalog"
+          }
+        }
+      ],
+      "routes": [
+        {
+          "origin": "Trapani",
+          "destination": "Riserva dello Zingaro",
+          "origin_coordinates": {
+            "lat": 38.0176,
+            "lon": 12.5365,
+            "source": "reviewed local catalog"
+          },
+          "destination_coordinates": {
+            "lat": 38.124,
+            "lon": 12.789,
+            "source": "reviewed local catalog"
+          },
+          "planned_departure": null,
+          "planned_duration_minutes": null,
+          "distance_km": null
+        }
+      ],
+      "notes": null,
+      "overnightLocation": null,
+      "coordinates": {
+        "lat": 38.0176,
+        "lon": 12.5365,
+        "source": "reviewed local catalog"
+      },
+      "status": "planned"
+    },
+    {
+      "date": "2026-09-03",
+      "dayNumber": 14,
+      "title": null,
+      "baseCity": null,
+      "destinations": [],
+      "activityType": "free_time",
+      "activities": [],
+      "pointsOfInterest": [],
+      "routes": [],
+      "notes": "Nessuna attività assegnata nel PDF.",
+      "overnightLocation": null,
+      "coordinates": null,
+      "status": "planned"
+    },
+    {
+      "date": "2026-09-04",
+      "dayNumber": 15,
+      "title": null,
+      "baseCity": null,
+      "destinations": [],
+      "activityType": "free_time",
+      "activities": [],
+      "pointsOfInterest": [],
+      "routes": [],
+      "notes": "Nessuna attività assegnata nel PDF. Lista separata non datata: Trapani / Erice; Monreale / Palermo; Cefalù. Note: Trapani - gelati e granite; Erice - gelati e granite.",
+      "overnightLocation": null,
+      "coordinates": null,
+      "status": "planned"
+    }
+  ]
+}
