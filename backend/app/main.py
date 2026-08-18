@@ -13,9 +13,9 @@ from .database import Base, SessionLocal, engine, get_db, migrate_schema
 from .models import Activity, ChecklistItem, ItineraryStop, Route, SavedPlace, TripDay
 from .schemas import (ActivityIn, ActivityPatch, NavigationRequest, ReorderRequest, RouteIn,
     RoutePatch, SavedPlaceIn, StopIn, StopPatch)
-from .services import (ROME, current_trip_context, get_next_activity, google_maps_url,
-    geocode_preview, get_next_trip_leg, leave_now, navigation_origin, prioritize_alerts, sea, seed_database, serialize_day,
-    trip_context, weather, weather_alerts)
+from .services import (ROME, current_trip_context, get_next_activity, get_next_trip_leg, google_destination, google_maps_url,
+    geocode_preview, leave_now, navigation_origin, prioritize_alerts, sea, seed_database, serialize_day,
+    stop_destination, next_itinerary_stop, trip_context, weather, weather_alerts)
 from .restaurants import recommended_restaurants
 from .providers import etna_latest, google_route, osrm_route, tomtom_route
 
@@ -236,25 +236,25 @@ async def etna_status(db: Session = Depends(get_db)): return await etna_latest(d
 async def navigation_next(payload: NavigationRequest, db: Session = Depends(get_db)):
     now=datetime.now(ROME)
     target_date=payload.simulation_date if payload.simulation and payload.simulation_date else now.date()
-    day=day_for(target_date,db); activity=get_next_activity(day,now)
-    if not day or not activity:
+    day=day_for(target_date,db)
+    stop=next_itinerary_stop(day)
+    activity=None if stop else get_next_activity(day,now)
+    if not day or (not stop and not activity):
         return {"origin":None,"originState":"LOCATION_UNAVAILABLE","nextActivity":None,
             "route":{"dataState":"UNAVAILABLE","message":"Nessuna attività successiva per la giornata"},"leaveNow":None}
     origin=navigation_origin(day,activity,payload.latitude,payload.longitude)
     if payload.simulation and origin and payload.latitude is not None:
         origin["type"]="SIMULATION"
-    destination=activity.coordinates
-    if not destination and day.routes:
-        matching=next((r for r in day.routes if r.destination.casefold()==(activity.location or "").casefold()),None)
-        if matching: destination=matching.destination_coordinates
-    if not destination:
-        destination=day.coordinates
-    activity_data={"id":activity.id,"title":activity.title,"location":activity.location,
-        "startTime":activity.start_time,"activityType":activity.activity_type,"coordinates":destination}
+    destination=stop.coordinates if stop else activity.coordinates
+    destination_value=stop_destination(stop) if stop else google_destination(activity.coordinates,activity.address,activity.title,activity.location)
+    activity_data={"id":stop.id,"title":stop.name,"location":stop.city,"startTime":None,
+        "activityType":stop.item_type,"coordinates":destination,"address":stop.address} if stop else {
+        "id":activity.id,"title":activity.title,"location":activity.location,"startTime":activity.start_time,
+        "activityType":activity.activity_type,"coordinates":destination,"address":activity.address}
     if not origin or not destination:
         return {"origin":origin,"originState":origin["type"] if origin else "LOCATION_UNAVAILABLE",
             "nextActivity":activity_data,"route":{"dataState":"UNAVAILABLE","message":"Coordinate non disponibili"},
-            "googleMapsUrl":google_maps_url(destination) if destination else None,"leaveNow":None}
+            "googleMapsUrl":google_maps_url(destination_value,origin) if destination_value else None,"leaveNow":None}
     base=None
     if settings.routing_provider=="google":
         base=await google_route(db,origin,destination,traffic=settings.traffic_provider=="google")
@@ -275,27 +275,37 @@ async def navigation_next(payload: NavigationRequest, db: Session = Depends(get_
     elif settings.traffic_provider=="none": route_data["trafficState"]="NOT_CONFIGURED"
     duration=route_data["liveDurationMinutes"] or route_data["staticDurationMinutes"]
     leave=None
-    if activity.start_time and duration:
+    if activity and activity.start_time and duration:
         start=datetime.combine(target_date,time.fromisoformat(activity.start_time),tzinfo=ROME)
         leave=leave_now(start,int(duration),0,settings.leave_now_buffer_minutes,now)
     return {"origin":origin,"originState":origin["type"],"nextActivity":activity_data,"route":route_data,
-        "googleMapsUrl":google_maps_url(destination,origin),"leaveNow":leave,
+        "googleMapsUrl":google_maps_url(destination_value or destination,origin),"leaveNow":leave,
         "privacy":{"persisted":False,"message":"La posizione non viene salvata"}}
 
 
 @app.get("/api/dashboard/today")
-async def dashboard_today(target_date: date | None = Query(None, alias="date"), db: Session = Depends(get_db)):
+async def dashboard_today(target_date: date | None = Query(None, alias="date"), latitude: float | None = Query(None, ge=-90, le=90),
+    longitude: float | None = Query(None, ge=-180, le=180), location: str | None = Query(None, max_length=120),
+    db: Session = Depends(get_db)):
     context = current_trip_context(db, target_date=target_date); day = day_for(date.fromisoformat(context["today"]), db)
+    live_context = current_trip_context(db)
     result = {"context":context, "day":serialize_day(day), "weather":{"dataState":"UNAVAILABLE","message":"Coordinate della giornata non configurate"},
               "traffic":{"dataState":"NOT_CONFIGURED","message":"Configura TOMTOM_API_KEY per il traffico live"},
               "routing":{"dataState":"UNAVAILABLE","message":"Nessuna tratta per oggi"},
               "sea":{"dataState":"UNAVAILABLE","message":"Giornata non marina"},
-              "alerts":[], "news":[], "etna":{"dataState":"UNAVAILABLE","message":"Fuori dalla finestra Etna"},
+              "alerts":[], "news":[], "weatherLocation":None,"newsLocation":None,
+              "liveLocationSource":"GPS" if latitude is not None and longitude is not None else "ITINERARY_FALLBACK",
+              "etna":{"dataState":"UNAVAILABLE","message":"Fuori dalla finestra Etna"},
               "nextTripLeg":None,"alertCoverage":{},"alertCoverageState":"PARTIAL"}
-    if context.get("coordinates"):
-        coords=context["coordinates"]; result["weather"] = await weather(db, coords["lat"], coords["lon"], target_date)
+    gps_coords={"lat":latitude,"lon":longitude} if latitude is not None and longitude is not None else None
+    coords=gps_coords or live_context.get("coordinates")
+    live_location=(location or "Posizione attuale") if gps_coords else live_context.get("primaryLocation")
+    result["weatherLocation"]=live_location;result["newsLocation"]=live_location
+    if coords:
+        result["weather"] = await weather(db, coords["lat"], coords["lon"])
+        result["weather"]["location"]=live_location;result["weather"]["locationSource"]=result["liveLocationSource"]
         if context.get("activityType") in {"sea","boat_trip"}: result["sea"] = await sea(db,coords["lat"],coords["lon"])
-        result["alerts"]=weather_alerts(result["weather"],context.get("primaryLocation"))
+        result["alerts"]=weather_alerts(result["weather"],live_location)
     leg=get_next_trip_leg(db,date.fromisoformat(context["today"]));result["nextTripLeg"]=leg
     if leg and leg.get("originCoordinates") and leg.get("destinationCoordinates"):
         result["routing"]=await osrm_route(db,leg["originCoordinates"],leg["destinationCoordinates"])

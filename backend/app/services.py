@@ -239,16 +239,16 @@ def current_trip_context(db: Session, now: datetime | None = None, target_date: 
     if not day:
         return {**temporal, "primaryLocation":None, "nextLocation":None, "activityType":None,
             "coordinates":None, "nextActivity":None, "nextRoute":None}
-    active_stop=next((s for s in day.stops if not s.archived and s.status=="planned"),None)
-    active = next((a for a in day.activities if a.status == "planned"), day.activities[0] if day.activities else None)
-    route = next((r for r in day.routes if not r.archived),None)
-    primary = active.location if active else active_stop.city if active_stop else day.base_city
+    active_stop=next_itinerary_stop(day)
+    active = None if active_stop else next((a for a in day.activities if a.status == "planned"), day.activities[0] if day.activities else None)
+    route = next((r for r in sorted(day.routes,key=lambda item:item.sort_order) if not r.archived),None)
+    primary = active_stop.city if active_stop else active.location if active else day.base_city
     next_location = route.destination if route else (day.destinations[1] if len(day.destinations)>1 else None)
-    coords = active.coordinates if active and active.coordinates else active_stop.coordinates if active_stop and active_stop.coordinates else day.coordinates
+    coords = active_stop.coordinates if active_stop and active_stop.coordinates else active.coordinates if active and active.coordinates else day.coordinates
     return {**temporal, "day":day.day_number, "primaryLocation":primary, "nextLocation":next_location,
-        "activityType":active.activity_type if active else active_stop.item_type if active_stop else "free_time", "coordinates":coords,
-        "nextActivity":({"id":active.id,"title":active.title,"startTime":active.start_time,"location":active.location,"address":active.address} if active else
-            {"id":active_stop.id,"title":active_stop.name,"startTime":None,"location":active_stop.city,"address":active_stop.address} if active_stop else None),
+        "activityType":active_stop.item_type if active_stop else active.activity_type if active else "free_time", "coordinates":coords,
+        "nextActivity":({"id":active_stop.id,"title":active_stop.name,"startTime":None,"location":active_stop.city,"address":active_stop.address} if active_stop else
+            {"id":active.id,"title":active.title,"startTime":active.start_time,"location":active.location,"address":active.address} if active else None),
         "nextRoute":None if not route else {"id":route.id,"origin":route.origin,"destination":route.destination,
             "originCoordinates":route.origin_coordinates,"destinationCoordinates":route.destination_coordinates}}
 
@@ -283,6 +283,16 @@ def get_next_activity(day: TripDay | None, now: datetime) -> Activity | None:
     return eligible[0] if eligible else candidates[0]
 
 
+def next_itinerary_stop(day: TripDay | None):
+    if not day:return None
+    return next((stop for stop in sorted(day.stops,key=lambda item:item.sort_order)
+        if not stop.archived and stop.status not in {"completed","skipped"}),None)
+
+
+def stop_destination(stop) -> str | None:
+    return google_destination(stop.coordinates,stop.address,stop.name,stop.city)
+
+
 def navigation_origin(day: TripDay | None, activity: Activity | None, latitude: float | None, longitude: float | None) -> dict | None:
     if latitude is not None and longitude is not None:
         return {"type":"GPS","lat":latitude,"lon":longitude}
@@ -295,17 +305,40 @@ def navigation_origin(day: TripDay | None, activity: Activity | None, latitude: 
 
 
 def get_next_trip_leg(db: Session, effective_date: date) -> dict | None:
-    """Resolve the next meaningful transfer without promoting POIs to trip legs."""
+    """Resolve the next leg from the ordered stop/transfer timeline."""
     if effective_date < TRIP_START or effective_date > TRIP_END:return None
     days=db.scalars(select(TripDay).where(TripDay.date>=effective_date).order_by(TripDay.date)).unique().all()
     if not days:return None
     current=days[0]
     current_routes=sorted((r for r in current.routes if not r.archived),key=lambda r:r.sort_order)
-    if current.date==effective_date and current_routes:
-        route=current_routes[0]
-        return {"id":route.id,"kind":"PLANNED","dayId":current.id,"origin":route.origin,
-            "destination":route.destination,"originCoordinates":route.origin_coordinates,
-            "destinationCoordinates":route.destination_coordinates,"plannedDeparture":route.planned_departure}
+    if current.date==effective_date:
+        active=next_itinerary_stop(current)
+        if active:
+            following=sorted(
+                [stop for stop in current.stops if not stop.archived and stop.status not in {"completed","skipped"} and stop.sort_order>active.sort_order]
+                +[route for route in current_routes if route.sort_order>active.sort_order],
+                key=lambda item:item.sort_order,
+            )
+            if following:
+                item=following[0]
+                if isinstance(item,Route):
+                    return {"id":item.id,"kind":"PLANNED","dayId":current.id,"origin":item.origin,
+                        "destination":item.destination,"originCoordinates":item.origin_coordinates,
+                        "destinationCoordinates":item.destination_coordinates,"originAddress":item.origin_address,
+                        "destinationAddress":item.destination_address,"plannedDeparture":item.planned_departure,
+                        "googleMapsUrl":google_maps_url(google_destination(item.destination_coordinates,item.destination_address,item.destination) or item.destination)}
+                return {"id":None,"kind":"POI","dayId":current.id,"origin":active.name,
+                    "destination":item.name,"originCoordinates":active.coordinates,
+                    "destinationCoordinates":item.coordinates,"originAddress":active.address,
+                    "destinationAddress":item.address,"plannedDeparture":None,
+                    "googleMapsUrl":google_maps_url(stop_destination(item) or item.name)}
+        if current_routes:
+            route=current_routes[0]
+            return {"id":route.id,"kind":"PLANNED","dayId":current.id,"origin":route.origin,
+                "destination":route.destination,"originCoordinates":route.origin_coordinates,
+                "destinationCoordinates":route.destination_coordinates,"originAddress":route.origin_address,
+                "destinationAddress":route.destination_address,"plannedDeparture":route.planned_departure,
+                "googleMapsUrl":google_maps_url(google_destination(route.destination_coordinates,route.destination_address,route.destination) or route.destination)}
     if current.date==effective_date and len(days)>1:
         following=days[1]
         origin_name=current.base_city or (current.destinations[-1] if current.destinations else current.title)

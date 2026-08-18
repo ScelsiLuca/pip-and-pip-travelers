@@ -3,7 +3,7 @@ import { Circle, CircleMarker, MapContainer, Polyline, Popup, TileLayer, useMap 
 import type { Coordinates, RouteLive, TripDay } from "./types";
 import { platformService, type DevicePosition } from "./services/platformService";
 
-export type TripLeg={id:number|null;kind:string;dayId:number;origin:string;destination:string;originCoordinates:Coordinates|null;destinationCoordinates:Coordinates|null;plannedDeparture:string|null};
+export type TripLeg={id:number|null;kind:string;dayId:number;origin:string;destination:string;originCoordinates:Coordinates|null;destinationCoordinates:Coordinates|null;originAddress?:string|null;destinationAddress?:string|null;plannedDeparture:string|null;googleMapsUrl?:string|null};
 function Fit({points}:{points:Coordinates[]}){const map=useMap();useEffect(()=>{if(points.length>1)map.fitBounds(points.map(p=>[p.lat,p.lon]),{padding:[38,38],maxZoom:13});else if(points[0])map.setView([points[0].lat,points[0].lon],12)},[map,points]);return null}
 function Locate({position,requestToken}:{position:DevicePosition|null;requestToken:number}){const map=useMap();useEffect(()=>{if(position&&requestToken)map.setView([position.lat,position.lon],16,{animate:true})},[map,position,requestToken]);useEffect(()=>{setTimeout(()=>map.invalidateSize(),120)},[map]);return null}
 
