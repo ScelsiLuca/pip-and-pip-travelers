@@ -147,7 +147,7 @@ function Today({
   });
   const[mapPosition,setMapPosition]=useState<Coordinates|null>(null);
   const[realPosition,setRealPosition]=useState<DevicePosition|null>(null);
-  const[simulatedPosition,setSimulatedPosition]=useState<Coordinates|null>(null);
+  const[simulatedPosition,setSimulatedPosition]=useState<{date:string;coordinates:Coordinates}|null>(null);
   const[gpsResolved,setGpsResolved]=useState(false);
   const latestRealPosition=useRef<DevicePosition|null>(null);
   const acceptRealPosition=(next:DevicePosition)=>{setGpsResolved(true);const previous=latestRealPosition.current;if(previous&&distanceKm(previous,next)<1)return;latestRealPosition.current=next;setLive(null);setLoading(true);setRealPosition(next);setMapPosition(next)};
@@ -158,9 +158,13 @@ function Today({
   const simulatedDay=useMemo(()=>trip.days.find(item=>item.date===simulation.date)||null,[trip.days,simulation.date]);
   const simulatedStop=simulatedDay?nextStop(simulatedDay):null;
   const defaultSimulatedPosition=simulatedStop?.coordinates||simulatedDay?.coordinates||null;
-  const effectiveLivePosition=simulation.enabled?(simulatedPosition||defaultSimulatedPosition):realPosition;
+  const selectableSimulatedPositions=useMemo(()=>trip.days.flatMap(item=>[
+    item.coordinates,
+    ...item.routes.flatMap(route=>[route.originCoordinates,route.destinationCoordinates]),
+  ]).filter((position):position is Coordinates=>Boolean(position)),[trip.days]);
+  const selectedSimulatedPosition=simulatedPosition?.date===simulation.date?simulatedPosition.coordinates:null;
+  const effectiveLivePosition=simulation.enabled?(selectedSimulatedPosition||defaultSimulatedPosition):realPosition;
   const effectiveLiveReady=simulation.enabled?Boolean(effectiveLivePosition):gpsResolved;
-  useEffect(()=>{setSimulatedPosition(null)},[simulation.date]);
   useEffect(() => {
     if(!effectiveLiveReady)return;
     const controller=new AbortController();
@@ -245,7 +249,13 @@ function Today({
           days={trip.days}
           simulation={simulation}
           onSimulationChange={setSimulation}
-          onPositionChange={position=>{setMapPosition(position);if(simulation.enabled)setSimulatedPosition(position)}}
+          onPositionChange={position=>{
+            setMapPosition(position);
+            if(!simulation.enabled)return;
+            if(!position){setSimulatedPosition(null);return}
+            const isSimulatedSelection=selectableSimulatedPositions.some(candidate=>Math.abs(candidate.lat-position.lat)<.000001&&Math.abs(candidate.lon-position.lon)<.000001);
+            if(isSimulatedSelection)setSimulatedPosition({date:simulation.date,coordinates:position});
+          }}
         />
         {stop&&<article className="next-stop-feature"><div><small>PROSSIMA TAPPA</small><h2>{stop.name}</h2><p>{stop.city}</p></div><a href={`https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(mapsDestination(stop))}`} target="_blank" rel="noreferrer">Naviga →</a></article>}
         <OperationalMap day={day||null} days={trip.days} currentPosition={simulation.enabled?effectiveLivePosition:mapPosition} nextLeg={live?.nextTripLeg||null} route={live?.routing||null} onPositionChange={setMapPosition}/>
