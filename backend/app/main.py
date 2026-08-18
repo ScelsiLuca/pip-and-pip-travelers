@@ -22,7 +22,10 @@ from .providers import etna_latest, google_route, osrm_route, tomtom_route
 
 @asynccontextmanager
 async def lifespan(_: FastAPI):
-    Path("data").mkdir(exist_ok=True)
+    if settings.sqlite_path:
+        Path(settings.sqlite_path).expanduser().parent.mkdir(parents=True, exist_ok=True)
+    else:
+        Path("data").mkdir(exist_ok=True)
     Base.metadata.create_all(engine)
     migrate_schema()
     with SessionLocal() as db: seed_database(db)
@@ -30,7 +33,7 @@ async def lifespan(_: FastAPI):
 
 
 app = FastAPI(title="Pip & Pip Travelers API", version="1.0.0", lifespan=lifespan)
-app.add_middleware(CORSMiddleware, allow_origins=settings.origins, allow_origin_regex=r"https?://(localhost|127\.0\.0\.1|192\.168\.\d+\.\d+|10\.\d+\.\d+\.\d+)(:\d+)?", allow_methods=["*"], allow_headers=["*"])
+app.add_middleware(CORSMiddleware, allow_origins=settings.origins, allow_methods=["*"], allow_headers=["*"])
 
 
 @app.get("/health")

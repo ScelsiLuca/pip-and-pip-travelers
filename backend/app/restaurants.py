@@ -1,4 +1,5 @@
 import asyncio
+import logging
 import math
 import re
 import unicodedata
@@ -13,6 +14,7 @@ GOOGLE_URL="https://places.googleapis.com/v1/places:searchText"
 TRIPADVISOR_SEARCH="https://api.content.tripadvisor.com/api/v1/location/search"
 TRIPADVISOR_DETAILS="https://api.content.tripadvisor.com/api/v1/location/{location_id}/details"
 RESTAURANT_TTL_MINUTES=10
+logger=logging.getLogger(__name__)
 
 
 def normalized_name(value: str) -> str:
@@ -125,7 +127,8 @@ async def recommended_restaurants(db: Session, city: str, lat: float | None=None
             "restaurants":items[:8],"dataState":"LIVE","cacheFresh":True,
             "ranking":"Bayesian rating weighted by review count; Google 60% and Tripadvisor 40% only for conservative matches."}
         cache_put(db,key,value,RESTAURANT_TTL_MINUTES);return value
-    except (httpx.HTTPError,ValueError,KeyError):
+    except (httpx.HTTPError,ValueError,KeyError) as exc:
+        logger.exception("Google Places restaurant lookup failed for city %s: %s",city,exc)
         stale,_=cache_get(db,key,allow_stale=True)
         if stale:return {**stale,"dataState":"OFFLINE","cacheFresh":False}
         return {"location":city,"generatedAt":datetime.now(ROME).isoformat(),"providers":providers,
