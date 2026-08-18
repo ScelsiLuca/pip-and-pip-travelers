@@ -256,12 +256,9 @@ export function StopSheet({
           </div>
           <div className="sheet-list">
             {onEdit && <button onClick={onEdit}>Modifica tappa</button>}
-            <button onClick={() => onStatus("done")}>
-              ✓ Segna come visitato
-            </button>
-            <button onClick={() => onStatus("skipped")}>
-              Salta questa tappa
-            </button>
+            {stop.status !== "done" && <button onClick={() => onStatus("done")}>✓ Segna come visitato</button>}
+            {stop.status !== "planned" && <button onClick={() => onStatus("planned")}>Ripristina come da visitare</button>}
+            {stop.status !== "skipped" && <button onClick={() => onStatus("skipped")}>Segna come saltato</button>}
           </div>
         </>
       )}
@@ -717,7 +714,7 @@ function StopRow({
   onMenu: () => void;
   onOpen: () => void;
   onEdit: () => void;
-  onStatus: (status: string) => void;
+  onStatus: (status: StopStatus) => void;
   onDelete: () => void;
   onMove: (direction: -1 | 1) => void;
   dragHandleProps: SortableRenderState["dragHandleProps"];
@@ -761,10 +758,9 @@ function StopRow({
           <a href={maps(value)} target="_blank" rel="noreferrer">
             Naviga
           </a>
-          <button onClick={() => onStatus("completed")}>
-            Segna come visitato
-          </button>
-          <button onClick={() => onStatus("skipped")}>Salta</button>
+          {stop.status !== "completed" && <button onClick={() => onStatus("done")}>Segna come visitato</button>}
+          {stop.status !== "planned" && <button onClick={() => onStatus("planned")}>Ripristina come da visitare</button>}
+          {stop.status !== "skipped" && <button onClick={() => onStatus("skipped")}>Segna come saltato</button>}
           {editMode && (
             <>
               <button onClick={() => onMove(-1)}>Sposta su</button>
@@ -840,7 +836,7 @@ export function ModernTripView({
     writeStopStatus(stop.id, value);
     setActive(null);
     onChanged();
-    flash(value === "done" ? "Tappa completata" : "Tappa saltata");
+    flash(value === "done" ? "Tappa completata" : value === "skipped" ? "Tappa saltata" : "Tappa ripristinata come da visitare");
   };
   const remove = async () => {
     if (!confirmDelete) return;
@@ -1035,10 +1031,7 @@ export function ModernTripView({
                 }}
                 onStatus={(value) => {
                   setMenu(null);
-                  void status(
-                    asTripStop(stop),
-                    value === "completed" ? "done" : "skipped",
-                  );
+                  void status(asTripStop(stop), value);
                 }}
                 onDelete={() => {
                   setMenu(null);
@@ -1175,7 +1168,7 @@ export function ModernTripView({
   );
 }
 
-export function GuideView({ trip, initial }: { trip: Trip; initial?: string }) {
+export function GuideView({ trip, initial, onChanged }: { trip: Trip; initial?: string; onChanged?:()=>void }) {
   const guides = useMemo(() => guidesFromDays(trip.days), [trip]),
     allStops = useMemo(() => guides.flatMap((g) => g.stops), [guides]);
   const [query, setQuery] = useState(""),
@@ -1198,6 +1191,7 @@ export function GuideView({ trip, initial }: { trip: Trip; initial?: string }) {
   const poiResults = query
     ? allStops.filter((s) => s.name.toLowerCase().includes(query.toLowerCase()))
     : [];
+  const updatePoiStatus=async(next:StopStatus)=>{if(!poi)return;if(poi.backendId)await api(`/api/stops/${poi.backendId}`,{method:"PATCH",body:JSON.stringify({status:next==="done"?"completed":next})});writeStopStatus(poi.id,next);setPoi(null);setVersion(x=>x+1);onChanged?.()};
   if (selected) {
     const city = cityGuideContent[selected.slug];
     return (
@@ -1283,13 +1277,7 @@ export function GuideView({ trip, initial }: { trip: Trip; initial?: string }) {
         <StopSheet
           stop={poi}
           onClose={() => setPoi(null)}
-          onStatus={(status) => {
-            if (poi) {
-              writeStopStatus(poi.id, status);
-              setPoi(null);
-              setVersion((x) => x + 1);
-            }
-          }}
+          onStatus={(status) => void updatePoiStatus(status)}
           onGuide={() => {}}
         />
       </main>
@@ -1340,12 +1328,7 @@ export function GuideView({ trip, initial }: { trip: Trip; initial?: string }) {
       <StopSheet
         stop={poi}
         onClose={() => setPoi(null)}
-        onStatus={(status) => {
-          if (poi) {
-            writeStopStatus(poi.id, status);
-            setPoi(null);
-          }
-        }}
+        onStatus={(status) => void updatePoiStatus(status)}
         onGuide={(city) =>
           setSelected(guides.find((g) => g.title === city) || null)
         }

@@ -686,7 +686,7 @@ export default function App() {
       )}{" "}
       {view === "trip" && <ModernTripView trip={trip} onChanged={changed} onGuide={name=>{setGuideTarget(name);setView("guide")}} />}{" "}
       {view === "map" && <MapView trip={trip} />}{" "}
-      {view === "guide" && <GuideView trip={trip} initial={guideTarget}/>} {" "}
+      {view === "guide" && <GuideView trip={trip} initial={guideTarget} onChanged={changed}/>} {" "}
       {view === "alerts" && <Placeholder kind="alerts" />}{" "}
       {view === "more" && <Placeholder kind="more" />}
       <nav>
