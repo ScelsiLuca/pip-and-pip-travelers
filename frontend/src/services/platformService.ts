@@ -19,12 +19,12 @@ export const platformService={
     const requested=await Geolocation.requestPermissions({permissions:['location']});
     if(requested.location!=='granted')throw new Error('PERMISSION_DENIED');
    }
-   try{const p=await Geolocation.getCurrentPosition({enableHighAccuracy:true,timeout:15000,maximumAge:60000});return{lat:p.coords.latitude,lon:p.coords.longitude,accuracy:p.coords.accuracy,updatedAt:new Date(p.timestamp).toISOString()}}
+   try{const p=await Geolocation.getCurrentPosition({enableHighAccuracy:true,timeout:15000,maximumAge:0});return{lat:p.coords.latitude,lon:p.coords.longitude,accuracy:p.coords.accuracy,updatedAt:new Date(p.timestamp).toISOString()}}
    catch(error){const message=String((error as Error)?.message||error).toLowerCase();throw new Error(message.includes('disabled')||message.includes('location services')?'GPS_DISABLED':'LOCATION_UNAVAILABLE')}
   }
   if(!window.isSecureContext)throw new Error('LOCATION_UNAVAILABLE');
   if(!navigator.geolocation)throw new Error('LOCATION_UNAVAILABLE');
-  return new Promise((resolve,reject)=>navigator.geolocation.getCurrentPosition(p=>resolve({lat:p.coords.latitude,lon:p.coords.longitude,accuracy:p.coords.accuracy,updatedAt:new Date(p.timestamp).toISOString()}),e=>reject(new Error(e.code===1?'PERMISSION_DENIED':'LOCATION_UNAVAILABLE')),{enableHighAccuracy:true,timeout:15000,maximumAge:60000}));
+  return new Promise((resolve,reject)=>navigator.geolocation.getCurrentPosition(p=>resolve({lat:p.coords.latitude,lon:p.coords.longitude,accuracy:p.coords.accuracy,updatedAt:new Date(p.timestamp).toISOString()}),e=>reject(new Error(e.code===1?'PERMISSION_DENIED':'LOCATION_UNAVAILABLE')),{enableHighAccuracy:true,timeout:15000,maximumAge:0}));
  },
  async watchPosition(callback:(position:DevicePosition)=>void):Promise<{remove:()=>Promise<void>}>{
   if(Capacitor.isNativePlatform()){

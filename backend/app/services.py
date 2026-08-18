@@ -134,7 +134,7 @@ def cache_put(db: Session, key: str, value: dict, ttl_minutes: int) -> None:
 
 async def request_json(url: str, params: dict, attempts: int = 3) -> dict:
     error = None
-    async with httpx.AsyncClient(timeout=8, headers={"User-Agent": "SicilyLiveDashboard/1.0"}) as client:
+    async with httpx.AsyncClient(timeout=8, headers={"User-Agent": "PipAndPipTravelers/1.0 (personal travel dashboard)"}) as client:
         for attempt in range(attempts):
             try:
                 response = await client.get(url, params=params)
@@ -158,6 +158,21 @@ async def geocode_preview(query: str) -> dict:
     unambiguous=len(candidates)==1 or (len(candidates)>1 and (candidates[0].get("importance") or 0)-(candidates[1].get("importance") or 0)>.18)
     return {"query":query,"candidates":candidates,"ambiguous":bool(candidates) and not unambiguous,
         "provider":"Nominatim / OpenStreetMap"}
+
+
+async def reverse_geocode(db: Session, lat: float, lon: float) -> str | None:
+    key=f"reverse-geocode:{lat:.3f}:{lon:.3f}"
+    cached,_=cache_get(db,key,allow_stale=True)
+    if cached:return cached.get("location")
+    try:
+        raw=await request_json("https://nominatim.openstreetmap.org/reverse",{
+            "lat":lat,"lon":lon,"format":"jsonv2","zoom":12,"addressdetails":1,"accept-language":"it"},attempts=1)
+        address=raw.get("address") or {}
+        location=next((address.get(name) for name in ("city","town","village","municipality","county") if address.get(name)),None)
+        cache_put(db,key,{"location":location,"source":"OpenStreetMap Nominatim"},10080)
+        return location
+    except RuntimeError:
+        return None
 
 
 async def weather(db: Session, lat: float, lon: float, target_date: date | None = None) -> dict:

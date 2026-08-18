@@ -15,7 +15,7 @@ from .schemas import (ActivityIn, ActivityPatch, NavigationRequest, ReorderReque
     RoutePatch, SavedPlaceIn, StopIn, StopPatch)
 from .services import (ROME, current_trip_context, get_next_activity, get_next_trip_leg, google_destination, google_maps_url,
     geocode_preview, leave_now, navigation_origin, prioritize_alerts, sea, seed_database, serialize_day,
-    stop_destination, next_itinerary_stop, trip_context, weather, weather_alerts)
+    stop_destination, next_itinerary_stop, reverse_geocode, trip_context, weather, weather_alerts)
 from .restaurants import recommended_restaurants
 from .providers import etna_latest, google_route, osrm_route, tomtom_route
 
@@ -285,8 +285,7 @@ async def navigation_next(payload: NavigationRequest, db: Session = Depends(get_
 
 @app.get("/api/dashboard/today")
 async def dashboard_today(target_date: date | None = Query(None, alias="date"), latitude: float | None = Query(None, ge=-90, le=90),
-    longitude: float | None = Query(None, ge=-180, le=180), location: str | None = Query(None, max_length=120),
-    db: Session = Depends(get_db)):
+    longitude: float | None = Query(None, ge=-180, le=180), db: Session = Depends(get_db)):
     context = current_trip_context(db, target_date=target_date); day = day_for(date.fromisoformat(context["today"]), db)
     live_context = current_trip_context(db)
     result = {"context":context, "day":serialize_day(day), "weather":{"dataState":"UNAVAILABLE","message":"Coordinate della giornata non configurate"},
@@ -294,13 +293,15 @@ async def dashboard_today(target_date: date | None = Query(None, alias="date"), 
               "routing":{"dataState":"UNAVAILABLE","message":"Nessuna tratta per oggi"},
               "sea":{"dataState":"UNAVAILABLE","message":"Giornata non marina"},
               "alerts":[], "news":[], "weatherLocation":None,"newsLocation":None,
+              "liveCoordinates":None,
               "liveLocationSource":"GPS" if latitude is not None and longitude is not None else "ITINERARY_FALLBACK",
               "etna":{"dataState":"UNAVAILABLE","message":"Fuori dalla finestra Etna"},
               "nextTripLeg":None,"alertCoverage":{},"alertCoverageState":"PARTIAL"}
     gps_coords={"lat":latitude,"lon":longitude} if latitude is not None and longitude is not None else None
     coords=gps_coords or live_context.get("coordinates")
-    live_location=(location or "Posizione attuale") if gps_coords else live_context.get("primaryLocation")
+    live_location=(await reverse_geocode(db,latitude,longitude) or "Posizione GPS") if gps_coords else "Posizione non disponibile"
     result["weatherLocation"]=live_location;result["newsLocation"]=live_location
+    result["liveCoordinates"]=gps_coords
     if coords:
         result["weather"] = await weather(db, coords["lat"], coords["lon"])
         result["weather"]["location"]=live_location;result["weather"]["locationSource"]=result["liveLocationSource"]

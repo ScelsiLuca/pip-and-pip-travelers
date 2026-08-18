@@ -51,10 +51,6 @@ const fmt = (iso: string) => {
   return `${d.getDate()} ${months[d.getMonth()]}`;
 };
 const distanceKm=(a:Coordinates,b:Coordinates)=>{const rad=(value:number)=>value*Math.PI/180,dLat=rad(b.lat-a.lat),dLon=rad(b.lon-a.lon),lat1=rad(a.lat),lat2=rad(b.lat);return 6371*2*Math.asin(Math.sqrt(Math.sin(dLat/2)**2+Math.cos(lat1)*Math.cos(lat2)*Math.sin(dLon/2)**2))};
-const nearestTripLocation=(trip:Trip,position:Coordinates)=>{const places=trip.days.flatMap(day=>[
-  ...(day.stops||[]).filter(stop=>stop.coordinates).map(stop=>({name:stop.city,coordinates:stop.coordinates!})),
-  ...(day.coordinates?[{name:day.baseCity||day.title||"Sicilia",coordinates:day.coordinates}]:[]),
-]);return places.reduce<{name:string;distance:number}|null>((best,place)=>{const distance=distanceKm(position,place.coordinates);return !best||distance<best.distance?{name:place.name,distance}:best},null)?.name||"Posizione attuale"};
 const mapsDestination=(stop:{coordinates:Coordinates|null;address?:string|null;name:string;city:string})=>stop.coordinates?`${stop.coordinates.lat},${stop.coordinates.lon}`:stop.address?.trim()||`${stop.name}, ${stop.city}, Italia`;
 const marker = L.divIcon({
   className: "pin",
@@ -78,10 +74,9 @@ function Weather({ data, location }: { data: LiveData; location?:string|null }) 
   return (
     <article className="card weather">
       <div className="card-head">
-        <span>METEO</span>
+        <span>METEO · {location||"Posizione non disponibile"}</span>
         <State data={data} />
       </div>
-      {location&&<small className="live-location">Posizione usata: {location}</small>}
       {c ? (
         <>
           <div className="big-value">
@@ -152,21 +147,26 @@ function Today({
   });
   const[mapPosition,setMapPosition]=useState<Coordinates|null>(null);
   const[realPosition,setRealPosition]=useState<DevicePosition|null>(null);
+  const[gpsResolved,setGpsResolved]=useState(false);
   const latestRealPosition=useRef<DevicePosition|null>(null);
-  const acceptRealPosition=(next:DevicePosition)=>{const previous=latestRealPosition.current;if(previous&&distanceKm(previous,next)<1)return;latestRealPosition.current=next;setRealPosition(next);setMapPosition(next)};
-  useEffect(()=>{let active=true,watch:{remove:()=>Promise<void>}|null=null;platformService.currentPosition().then(position=>{if(active)acceptRealPosition(position)}).catch(()=>{});platformService.watchPosition(position=>{if(active)acceptRealPosition(position)}).then(value=>watch=value).catch(()=>{});return()=>{active=false;void watch?.remove()}},[]);
-  const realLocation=useMemo(()=>realPosition?nearestTripLocation(trip,realPosition):null,[trip,realPosition?.lat,realPosition?.lon]);
+  const acceptRealPosition=(next:DevicePosition)=>{setGpsResolved(true);const previous=latestRealPosition.current;if(previous&&distanceKm(previous,next)<1)return;latestRealPosition.current=next;setLive(null);setLoading(true);setRealPosition(next);setMapPosition(next)};
+  useEffect(()=>{let active=true,watch:{remove:()=>Promise<void>}|null=null;const refresh=()=>platformService.currentPosition().then(position=>{if(active)acceptRealPosition(position)}).catch(()=>{if(active)setGpsResolved(true)});void refresh();platformService.watchPosition(position=>{if(active)acceptRealPosition(position)}).then(value=>{watch=value;if(!active)void value.remove()}).catch(()=>{});const foreground=()=>{const age=Date.now()-new Date(latestRealPosition.current?.updatedAt||0).getTime();if(document.visibilityState==='visible'&&age>120000)void refresh()};document.addEventListener('visibilitychange',foreground);return()=>{active=false;document.removeEventListener('visibilitychange',foreground);void watch?.remove()}},[]);
   const effectiveDate = simulation.enabled
     ? simulation.date
     : trip.context.today;
   useEffect(() => {
+    if(!gpsResolved)return;
+    const controller=new AbortController();
+    setLive(null);
     setLoading(true);
     const params=new URLSearchParams({date:effectiveDate});
-    if(realPosition){params.set('latitude',String(realPosition.lat));params.set('longitude',String(realPosition.lon));if(realLocation)params.set('location',realLocation)}
-    api<Dashboard>(`/api/dashboard/today?${params}`)
-      .then(setLive)
-      .finally(() => setLoading(false));
-  }, [refreshToken, effectiveDate, realPosition?.lat, realPosition?.lon, realLocation]);
+    if(realPosition){params.set('latitude',String(realPosition.lat));params.set('longitude',String(realPosition.lon))}
+    api<Dashboard>(`/api/dashboard/today?${params}`,{signal:controller.signal})
+      .then(value=>{if(!controller.signal.aborted)setLive(value)})
+      .catch(error=>{if((error as Error).name!=="AbortError")setLive(null)})
+      .finally(() => {if(!controller.signal.aborted)setLoading(false)});
+    return()=>controller.abort();
+  }, [refreshToken, effectiveDate, gpsResolved, realPosition?.lat, realPosition?.lon]);
   const day = live?.day,
     context = live?.context || trip.context,
     kind = day?.activityType || "city";
@@ -299,7 +299,7 @@ function Today({
               </div>
             ))
           ) : (
-            <div className="service-summary"><strong>{live?.alertCoverageState==='FULL'?'🟢 Tutto tranquillo':'🟡 Da controllare'}</strong><p>{live?.alertCoverageState==='PARTIAL'?'Alcuni servizi non sono ancora disponibili.':'Nessuna criticità rilevata dai servizi attivi.'}</p>{relevantServices.map(([name,data])=>{const s=getUserFacingProviderStatus(data?.dataState,data?.updatedAt);return <div className="service-row" key={name}><span>{name}</span><strong className={s.tone}>{s.label}</strong></div>})}<details><summary>Stato servizi</summary><p>Traffico · {getUserFacingProviderStatus(live?.traffic.dataState).label}</p><p>Notizie per {live?.newsLocation||primaryLocation} · Non disponibili</p></details></div>
+            <div className="service-summary"><strong>{live?.alertCoverageState==='FULL'?'🟢 Tutto tranquillo':'🟡 Da controllare'}</strong><p>{live?.alertCoverageState==='PARTIAL'?'Alcuni servizi non sono ancora disponibili.':'Nessuna criticità rilevata dai servizi attivi.'}</p>{relevantServices.map(([name,data])=>{const s=getUserFacingProviderStatus(data?.dataState,data?.updatedAt);return <div className="service-row" key={name}><span>{name}</span><strong className={s.tone}>{s.label}</strong></div>})}<details><summary>Stato servizi</summary><p>Traffico · {getUserFacingProviderStatus(live?.traffic.dataState).label}</p><p>NEWS · {live?.newsLocation||"Posizione non disponibile"} · Non disponibili</p></details></div>
           )}
         </article>
         {kind === "etna" && (
