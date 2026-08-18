@@ -17,3 +17,4 @@ frontend/android/local.properties
 frontend/android/.gradle/
 frontend/android/app/build/
 tmp/
+.aider*
