@@ -285,7 +285,8 @@ async def navigation_next(payload: NavigationRequest, db: Session = Depends(get_
 
 @app.get("/api/dashboard/today")
 async def dashboard_today(target_date: date | None = Query(None, alias="date"), latitude: float | None = Query(None, ge=-90, le=90),
-    longitude: float | None = Query(None, ge=-180, le=180), db: Session = Depends(get_db)):
+    longitude: float | None = Query(None, ge=-180, le=180), live_source: str = Query("GPS", pattern="^(GPS|SIMULATION)$"),
+    db: Session = Depends(get_db)):
     context = current_trip_context(db, target_date=target_date); day = day_for(date.fromisoformat(context["today"]), db)
     live_context = current_trip_context(db)
     result = {"context":context, "day":serialize_day(day), "weather":{"dataState":"UNAVAILABLE","message":"Coordinate della giornata non configurate"},
@@ -294,7 +295,7 @@ async def dashboard_today(target_date: date | None = Query(None, alias="date"), 
               "sea":{"dataState":"UNAVAILABLE","message":"Giornata non marina"},
               "alerts":[], "news":[], "weatherLocation":None,"newsLocation":None,
               "liveCoordinates":None,
-              "liveLocationSource":"GPS" if latitude is not None and longitude is not None else "ITINERARY_FALLBACK",
+              "liveLocationSource":live_source if latitude is not None and longitude is not None else "ITINERARY_FALLBACK",
               "etna":{"dataState":"UNAVAILABLE","message":"Fuori dalla finestra Etna"},
               "nextTripLeg":None,"alertCoverage":{},"alertCoverageState":"PARTIAL"}
     gps_coords={"lat":latitude,"lon":longitude} if latitude is not None and longitude is not None else None

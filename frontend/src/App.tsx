@@ -147,6 +147,7 @@ function Today({
   });
   const[mapPosition,setMapPosition]=useState<Coordinates|null>(null);
   const[realPosition,setRealPosition]=useState<DevicePosition|null>(null);
+  const[simulatedPosition,setSimulatedPosition]=useState<Coordinates|null>(null);
   const[gpsResolved,setGpsResolved]=useState(false);
   const latestRealPosition=useRef<DevicePosition|null>(null);
   const acceptRealPosition=(next:DevicePosition)=>{setGpsResolved(true);const previous=latestRealPosition.current;if(previous&&distanceKm(previous,next)<1)return;latestRealPosition.current=next;setLive(null);setLoading(true);setRealPosition(next);setMapPosition(next)};
@@ -154,19 +155,25 @@ function Today({
   const effectiveDate = simulation.enabled
     ? simulation.date
     : trip.context.today;
+  const simulatedDay=useMemo(()=>trip.days.find(item=>item.date===simulation.date)||null,[trip.days,simulation.date]);
+  const simulatedStop=simulatedDay?nextStop(simulatedDay):null;
+  const defaultSimulatedPosition=simulatedStop?.coordinates||simulatedDay?.coordinates||null;
+  const effectiveLivePosition=simulation.enabled?(simulatedPosition||defaultSimulatedPosition):realPosition;
+  const effectiveLiveReady=simulation.enabled?Boolean(effectiveLivePosition):gpsResolved;
+  useEffect(()=>{setSimulatedPosition(null)},[simulation.date]);
   useEffect(() => {
-    if(!gpsResolved)return;
+    if(!effectiveLiveReady)return;
     const controller=new AbortController();
     setLive(null);
     setLoading(true);
     const params=new URLSearchParams({date:effectiveDate});
-    if(realPosition){params.set('latitude',String(realPosition.lat));params.set('longitude',String(realPosition.lon))}
+    if(effectiveLivePosition){params.set('latitude',String(effectiveLivePosition.lat));params.set('longitude',String(effectiveLivePosition.lon));params.set('live_source',simulation.enabled?'SIMULATION':'GPS')}
     api<Dashboard>(`/api/dashboard/today?${params}`,{signal:controller.signal})
       .then(value=>{if(!controller.signal.aborted)setLive(value)})
       .catch(error=>{if((error as Error).name!=="AbortError")setLive(null)})
       .finally(() => {if(!controller.signal.aborted)setLoading(false)});
     return()=>controller.abort();
-  }, [refreshToken, effectiveDate, gpsResolved, realPosition?.lat, realPosition?.lon]);
+  }, [refreshToken, effectiveDate, effectiveLiveReady, effectiveLivePosition?.lat, effectiveLivePosition?.lon, simulation.enabled]);
   const day = live?.day,
     context = live?.context || trip.context,
     kind = day?.activityType || "city";
@@ -238,10 +245,10 @@ function Today({
           days={trip.days}
           simulation={simulation}
           onSimulationChange={setSimulation}
-          onPositionChange={setMapPosition}
+          onPositionChange={position=>{setMapPosition(position);if(simulation.enabled)setSimulatedPosition(position)}}
         />
         {stop&&<article className="next-stop-feature"><div><small>PROSSIMA TAPPA</small><h2>{stop.name}</h2><p>{stop.city}</p></div><a href={`https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(mapsDestination(stop))}`} target="_blank" rel="noreferrer">Naviga →</a></article>}
-        <OperationalMap day={day||null} days={trip.days} currentPosition={mapPosition} nextLeg={live?.nextTripLeg||null} route={live?.routing||null} onPositionChange={setMapPosition}/>
+        <OperationalMap day={day||null} days={trip.days} currentPosition={simulation.enabled?effectiveLivePosition:mapPosition} nextLeg={live?.nextTripLeg||null} route={live?.routing||null} onPositionChange={setMapPosition}/>
         {live && (
           <div style={{ display: "contents", order: order.weather }}>
             <Weather data={live.weather} location={live.weatherLocation} />
