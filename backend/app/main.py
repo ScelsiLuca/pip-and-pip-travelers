@@ -323,8 +323,14 @@ async def dashboard_today(target_date: date | None = Query(None, alias="date"), 
         "etna":result["etna"].get("dataState","UNAVAILABLE") if relevant_etna else "UNAVAILABLE",
         "traffic":result["traffic"].get("dataState","NOT_CONFIGURED"),"news":"NOT_CONFIGURED",
         "civilProtection":"NOT_CONFIGURED","marine":result["sea"].get("dataState","UNAVAILABLE")}
-    active=[v for k,v in result["alertCoverage"].items() if k in {"weather","etna","traffic","marine"}]
-    result["alertCoverageState"]="FULL" if active and all(v in {"LIVE","CACHE"} for v in active) else "PARTIAL"
+    active={"weather":result["alertCoverage"]["weather"]}
+    if relevant_etna:
+        active["etna"]=result["alertCoverage"]["etna"]
+    if context.get("activityType") in {"sea","boat_trip"}:
+        active["marine"]=result["alertCoverage"]["marine"]
+    if result["traffic"].get("dataState")!="NOT_CONFIGURED":
+        active["traffic"]=result["alertCoverage"]["traffic"]
+    result["alertCoverageState"]="FULL" if active and all(v in {"LIVE","CACHE"} for v in active.values()) else "PARTIAL"
     return result
 
 
