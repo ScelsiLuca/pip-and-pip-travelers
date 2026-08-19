@@ -9,7 +9,7 @@ import httpx
 from sqlalchemy import delete, func, select
 from sqlalchemy.orm import Session
 from .config import settings
-from .models import Activity, CacheEntry, ChecklistItem, ItineraryStop, Route, TripDay
+from .models import Activity, CacheEntry, ChecklistItem, ItineraryStop, Route, SavedPlace, TripDay
 
 ROME = ZoneInfo("Europe/Rome")
 TRIP_START = date(2026, 8, 21)
@@ -80,6 +80,15 @@ def seed_database(db: Session) -> None:
         db.execute(delete(Route)); db.execute(delete(ChecklistItem)); db.execute(delete(TripDay)); db.commit()
     path = Path(__file__).parents[1] / "data" / "itinerary.json"
     payload = json.loads(path.read_text(encoding="utf-8"))
+    # optional structured stops overlay file (does not replace itinerary.json unless present)
+    stops_path = Path(__file__).parents[1] / "data" / "itinerary_stops.json"
+    stops_overlay = {}
+    if stops_path.exists():
+        try:
+            overlay = json.loads(stops_path.read_text(encoding="utf-8"))
+            stops_overlay = {d["date"]: d.get("stops", []) for d in overlay.get("days", [])}
+        except Exception:
+            stops_overlay = {}
     for item in payload["days"]:
         day = TripDay(
             date=date.fromisoformat(item["date"]), day_number=item["dayNumber"], title=item["title"],
@@ -91,7 +100,40 @@ def seed_database(db: Session) -> None:
             db.add(Activity(trip_day_id=day.id, **activity))
         for route in item["routes"]:
             db.add(Route(trip_day_id=day.id, **route))
+        # create itinerary stops directly from seed if provided
+        for stop in stops_overlay.get(item["date"], item.get("stops", [])):
+            db.add(ItineraryStop(
+                trip_day_id=day.id,
+                name=stop.get("name"),
+                city=stop.get("city") or day.base_city or day.title,
+                item_type=stop.get("item_type", "poi"),
+                address=stop.get("address"),
+                notes=stop.get("notes"),
+                coordinates=stop.get("coordinates"),
+                start_time=stop.get("start_time"),
+                end_time=stop.get("end_time"),
+                status=stop.get("status", "planned"),
+                sort_order=stop.get("sort_order") or 0,
+                original_key=stop.get("original_key") or f"day-{day.day_number}-stop-{stop.get('sort_order', 0)}"
+            ))
     db.commit(); ensure_editable_itinerary(db)
+    # optional saved places seed (food recommendations)
+    saved_path = Path(__file__).parents[1] / "data" / "saved_places.json"
+    if saved_path.exists():
+        try:
+            saved_payload = json.loads(saved_path.read_text(encoding="utf-8"))
+            for entry in saved_payload.get("places", []):
+                # avoid duplicate names
+                existing = db.scalars(select(SavedPlace).where(SavedPlace.name == entry.get("name"))).all()
+                if not existing:
+                    db.add(SavedPlace(
+                        name=entry.get("name"), category=entry.get("category","food"),
+                        latitude=entry.get("coordinates", {}).get("lat"), longitude=entry.get("coordinates", {}).get("lon"),
+                        address=entry.get("address"), notes=entry.get("notes"), link=entry.get("link")
+                    ))
+            db.commit()
+        except (OSError, json.JSONDecodeError) as exc:
+            print(f"Unable to load saved_places.json: {exc}")
 
 
 def serialize_day(day: TripDay | None) -> dict | None:
@@ -108,6 +150,7 @@ def serialize_day(day: TripDay | None) -> dict | None:
             "status": a.status, "notes": a.notes, "coordinates": a.coordinates, "address": a.address, "sortOrder": a.sort_order} for a in day.activities],
         "stops": [{"id":s.id,"tripDayId":s.trip_day_id,"name":s.name,"city":s.city,"itemType":s.item_type,
             "address":s.address,"notes":s.notes,"coordinates":s.coordinates,"status":s.status,
+            "startTime":s.start_time,"endTime":s.end_time,
             "sortOrder":s.sort_order,"original":bool(s.original_key)} for s in day.stops if not s.archived],
         "routes": [{"id": r.id, "origin": r.origin, "destination": r.destination,
             "originAddress":r.origin_address,"destinationAddress":r.destination_address,"mode":r.mode,
@@ -255,14 +298,20 @@ def current_trip_context(db: Session, now: datetime | None = None, target_date: 
         return {**temporal, "primaryLocation":None, "nextLocation":None, "activityType":None,
             "coordinates":None, "nextActivity":None, "nextRoute":None}
     active_stop=next_itinerary_stop(day)
-    active = None if active_stop else next((a for a in day.activities if a.status == "planned"), day.activities[0] if day.activities else None)
+    # prefer a planned sea/boat_trip activity over a stop when such an activity exists (e.g., full-day boat trips)
+    planned_sea_activity = next((a for a in day.activities if a.status == "planned" and a.activity_type in {"sea","boat_trip"}), None)
+    if planned_sea_activity:
+        active = planned_sea_activity
+        active_stop = None
+    else:
+        active = None if active_stop else next((a for a in day.activities if a.status == "planned"), day.activities[0] if day.activities else None)
     route = next((r for r in sorted(day.routes,key=lambda item:item.sort_order) if not r.archived),None)
     primary = active_stop.city if active_stop else active.location if active else day.base_city
     next_location = route.destination if route else (day.destinations[1] if len(day.destinations)>1 else None)
     coords = active_stop.coordinates if active_stop and active_stop.coordinates else active.coordinates if active and active.coordinates else day.coordinates
     return {**temporal, "day":day.day_number, "primaryLocation":primary, "nextLocation":next_location,
         "activityType":active_stop.item_type if active_stop else active.activity_type if active else "free_time", "coordinates":coords,
-        "nextActivity":({"id":active_stop.id,"title":active_stop.name,"startTime":None,"location":active_stop.city,"address":active_stop.address} if active_stop else
+        "nextActivity":({"id":active_stop.id,"title":active_stop.name,"startTime":active_stop.start_time,"location":active_stop.city,"address":active_stop.address} if active_stop else
             {"id":active.id,"title":active.title,"startTime":active.start_time,"location":active.location,"address":active.address} if active else None),
         "nextRoute":None if not route else {"id":route.id,"origin":route.origin,"destination":route.destination,
             "originCoordinates":route.origin_coordinates,"destinationCoordinates":route.destination_coordinates}}
@@ -299,9 +348,14 @@ def get_next_activity(day: TripDay | None, now: datetime) -> Activity | None:
 
 
 def next_itinerary_stop(day: TripDay | None):
-    if not day:return None
-    return next((stop for stop in sorted(day.stops,key=lambda item:item.sort_order)
-        if not stop.archived and stop.status not in {"completed","skipped"}),None)
+    if not day: return None
+    def stop_key(stop):
+        # stops with a start_time should appear before unspecified-time stops
+        if stop.start_time:
+            return (0, stop.start_time, stop.sort_order or 0)
+        return (1, stop.sort_order or 0)
+    ordered = sorted((s for s in day.stops if not s.archived), key=stop_key)
+    return next((stop for stop in ordered if stop.status == "planned"), None)
 
 
 def stop_destination(stop) -> str | None:
@@ -328,13 +382,44 @@ def get_next_trip_leg(db: Session, effective_date: date) -> dict | None:
     current_routes=sorted((r for r in current.routes if not r.archived),key=lambda r:r.sort_order)
     if current.date==effective_date:
         active=next_itinerary_stop(current)
+        # If there's no in-day route and an inter-day transfer to the following day's primary activity is expected,
+        # treat the next leg as INTER_DAY even when an active stop exists. This preserves inter-day routing semantics.
+        if active and not current_routes and len(days)>1:
+            following_day=days[1]
+            origin_name=current.base_city or (current.destinations[-1] if current.destinations else current.title)
+            first_activity=next((a for a in sorted(following_day.activities,key=lambda a:a.sort_order)
+                if a.status not in {"completed","skipped"} and a.location and a.coordinates),None)
+            destination_name=(first_activity.location if first_activity else None) or (following_day.destinations[0] if following_day.destinations else following_day.base_city or following_day.title)
+            destination_coordinates=(first_activity.coordinates if first_activity else None) or following_day.coordinates
+            if origin_name and destination_name and origin_name.casefold()!=destination_name.casefold() and current.coordinates and destination_coordinates:
+                return {"id":None,"kind":"INTER_DAY","dayId":following_day.id,"origin":origin_name,
+                    "destination":destination_name,"originCoordinates":current.coordinates,
+                    "destinationCoordinates":destination_coordinates,"plannedDeparture":None}
         if active:
+            # if there is an in-day route scheduled before the active stop (e.g., an early transfer into the day's area),
+            # prefer that route as the next planned leg
+            if current_routes and current_routes[0].sort_order < (active.sort_order or 0):
+                route = current_routes[0]
+                return {"id":route.id,"kind":"PLANNED","dayId":current.id,"origin":route.origin,
+                    "destination":route.destination,"originCoordinates":route.origin_coordinates,
+                    "destinationCoordinates":route.destination_coordinates,"originAddress":route.origin_address,
+                    "destinationAddress":route.destination_address,"plannedDeparture":route.planned_departure,
+                    "googleMapsUrl":google_maps_url(google_destination(route.destination_coordinates,route.destination_address,route.destination) or route.destination)}
             following=sorted(
                 [stop for stop in current.stops if not stop.archived and stop.status not in {"completed","skipped"} and stop.sort_order>active.sort_order]
                 +[route for route in current_routes if route.sort_order>active.sort_order],
                 key=lambda item:item.sort_order,
             )
             if following:
+                # prefer the first route in the following sequence if present (routes represent planned transfers)
+                first_route = next((it for it in following if isinstance(it, Route)), None)
+                if first_route:
+                    item = first_route
+                    return {"id":item.id,"kind":"PLANNED","dayId":current.id,"origin":item.origin,
+                        "destination":item.destination,"originCoordinates":item.origin_coordinates,
+                        "destinationCoordinates":item.destination_coordinates,"originAddress":item.origin_address,
+                        "destinationAddress":item.destination_address,"plannedDeparture":item.planned_departure,
+                        "googleMapsUrl":google_maps_url(google_destination(item.destination_coordinates,item.destination_address,item.destination) or item.destination)}
                 item=following[0]
                 if isinstance(item,Route):
                     return {"id":item.id,"kind":"PLANNED","dayId":current.id,"origin":item.origin,

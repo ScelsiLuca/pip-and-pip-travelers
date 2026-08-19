@@ -1,0 +1,161 @@
+{
+  "days": [
+    {
+      "date": "2026-08-21",
+      "stops": [
+        {"name":"Pescheria di Catania","city":"Catania","start_time":"09:00","end_time":"09:45","sort_order":100},
+        {"name":"Piazza del Duomo + Fontana dell'Elefante","city":"Catania","start_time":"09:45","end_time":"10:15","sort_order":200},
+        {"name":"Via Crociferi","city":"Catania","start_time":"10:20","end_time":"11:15","sort_order":300},
+        {"name":"Piazza Università","city":"Catania","start_time":"11:25","end_time":"11:45","sort_order":400},
+        {"name":"Teatro Massimo Bellini","city":"Catania","start_time":"11:50","end_time":"12:15","sort_order":500},
+        {"name":"Via Etnea","city":"Catania","start_time":"12:20","end_time":"13:00","sort_order":600},
+        {"name":"Giardino Bellini","city":"Catania","start_time":"14:30","end_time":"15:30","sort_order":700}
+      ]
+    },
+    {
+      "date": "2026-08-22",
+      "stops": [
+        {"name":"Duomo di Taormina","city":"Taormina","start_time":"09:30","end_time":"10:00","sort_order":100},
+        {"name":"Corso Umberto","city":"Taormina","start_time":"10:00","end_time":"10:45","sort_order":200},
+        {"name":"Palazzo Corvaja","city":"Taormina","start_time":"10:45","end_time":"11:10","sort_order":300},
+        {"name":"Teatro Antico di Taormina","city":"Taormina","start_time":"11:15","end_time":"12:45","sort_order":400},
+        {"name":"Villa Comunale di Taormina","city":"Taormina","start_time":"13:00","end_time":"13:45","sort_order":500},
+        {"name":"Isola Bella","city":"Taormina","start_time":"15:00","end_time":"18:30","sort_order":600}
+      ]
+    },
+    {
+      "date": "2026-08-23",
+      "stops": [
+      {"name":"Escursione Etna","city":"Etna","item_type":"etna","start_time":"08:30","end_time":"15:00","sort_order":100},
+      {"name":"Trasferimento Etna -> Siracusa","city":"Etna","start_time":"16:00","end_time":"18:00","sort_order":200}
+      ]
+    },
+    {
+      "date": "2026-08-24",
+      "stops": [
+        {"name":"Parco Archeologico / Orecchio di Dionisio / Teatro Greco","city":"Siracusa","start_time":"09:00","end_time":"11:30","sort_order":100},
+        {"name":"Basilica Santuario Madonna delle Lacrime","city":"Siracusa","start_time":"12:00","end_time":"12:30","sort_order":200},
+        {"name":"Tempio di Apollo","city":"Siracusa","start_time":"14:30","end_time":"14:50","sort_order":300},
+        {"name":"Fontana di Diana","city":"Siracusa","start_time":"15:00","end_time":"15:20","sort_order":400},
+        {"name":"Piazza Duomo + Cattedrale","city":"Siracusa","start_time":"15:25","end_time":"16:15","sort_order":500},
+        {"name":"Fonte Aretusa","city":"Siracusa","start_time":"16:30","end_time":"17:00","sort_order":600},
+        {"name":"Lungomare Alfeo / Ortigia","city":"Siracusa","start_time":"17:00","end_time":"19:00","sort_order":700}
+      ]
+    },
+    {
+      "date": "2026-08-25",
+      "stops": [
+        {"name":"Pillirina Boat Tour","city":"Pillirina","start_time":"08:30","end_time":"12:00","sort_order":100},
+        {"name":"Porta Reale, Noto","city":"Noto","start_time":"13:30","end_time":"13:45","sort_order":200},
+        {"name":"San Francesco all'Immacolata, Noto","city":"Noto","start_time":"13:50","end_time":"14:10","sort_order":300},
+        {"name":"Cattedrale di Noto","city":"Noto","start_time":"14:15","end_time":"14:45","sort_order":400},
+        {"name":"Palazzo Ducezio","city":"Noto","start_time":"14:50","end_time":"15:15","sort_order":500},
+        {"name":"Via Corrado Nicolaci","city":"Noto","start_time":"15:20","end_time":"15:40","sort_order":600},
+        {"name":"Teatro Tina di Lorenzo","city":"Noto","start_time":"15:45","end_time":"16:10","sort_order":700},
+        {"name":"Chiesa di San Domenico","city":"Noto","start_time":"16:15","end_time":"16:35","sort_order":800},
+        {"name":"Transfer Noto -> Marzamemi","city":"Noto","start_time":"17:15","end_time":"18:00","sort_order":900},
+        {"name":"Tonnara di Marzamemi","city":"Marzamemi","start_time":"18:00","end_time":"18:30","sort_order":1000},
+        {"name":"Piazza Regina Margherita","city":"Marzamemi","start_time":"18:30","end_time":"19:00","sort_order":1100},
+        {"name":"Vicolo delle Sirene / sunset","city":"Marzamemi","start_time":"19:00","end_time":"20:30","sort_order":1200}
+      ]
+    },
+    {
+      "date": "2026-08-26",
+      "stops": [
+        {"name":"Cattedrale San Giovanni Battista, Ragusa","city":"Ragusa","start_time":"08:30","end_time":"09:00","sort_order":100},
+        {"name":"Santa Maria delle Scale","city":"Ragusa","start_time":"09:15","end_time":"09:45","sort_order":200},
+        {"name":"Santa Maria dell'Itria","city":"Ragusa","start_time":"10:00","end_time":"10:20","sort_order":300},
+        {"name":"Piazza Duomo + Duomo San Giorgio, Ragusa Ibla","city":"Ragusa Ibla","start_time":"10:30","end_time":"11:15","sort_order":400},
+        {"name":"Circolo di Conversazione","city":"Ragusa","start_time":"11:20","end_time":"11:40","sort_order":500},
+        {"name":"Giardino Ibleo","city":"Ragusa","start_time":"11:45","end_time":"12:30","sort_order":600},
+        {"name":"Duomo San Giorgio, Modica","city":"Modica","start_time":"13:30","end_time":"14:10","sort_order":700},
+        {"name":"Belvedere San Benedetto","city":"Modica","start_time":"14:20","end_time":"14:40","sort_order":800},
+        {"name":"Corso Umberto I","city":"Modica","start_time":"14:45","end_time":"15:30","sort_order":900},
+        {"name":"Duomo San Pietro","city":"Modica","start_time":"15:30","end_time":"16:00","sort_order":1000},
+        {"name":"Piazza Italia, Scicli","city":"Scicli","start_time":"16:45","end_time":"17:10","sort_order":1100},
+        {"name":"Palazzo Beneventano","city":"Scicli","start_time":"17:15","end_time":"17:45","sort_order":1200},
+        {"name":"Via Francesco Mormina Penna","city":"Scicli","start_time":"17:50","end_time":"18:20","sort_order":1300},
+        {"name":"Chiesa San Giovanni Evangelista","city":"Scicli","start_time":"18:25","end_time":"18:50","sort_order":1400},
+        {"name":"Antica Farmacia Cartia","city":"Scicli","start_time":"19:00","end_time":"19:30","sort_order":1500},
+        {"name":"Chiesa San Bartolomeo","city":"Scicli","start_time":"19:40","end_time":"20:10","sort_order":1600}
+      ]
+    },
+    {
+      "date": "2026-08-27",
+      "stops": [
+        {"name":"Valle dei Templi","city":"Agrigento","start_time":"09:00","end_time":"12:00","sort_order":100},
+        {"name":"Statua Andrea Camilleri","city":"Agrigento","start_time":"14:30","end_time":"14:50","sort_order":200},
+        {"name":"Via Atenea","city":"Agrigento","start_time":"14:50","end_time":"15:45","sort_order":300},
+        {"name":"Piazza Municipio","city":"Agrigento","start_time":"15:50","end_time":"16:10","sort_order":400},
+        {"name":"Teatro Pirandello","city":"Agrigento","start_time":"16:15","end_time":"16:45","sort_order":500},
+        {"name":"Cattedrale San Gerlando","city":"Agrigento","start_time":"17:00","end_time":"17:40","sort_order":600},
+        {"name":"Scala dei Turchi","city":"Agrigento","start_time":"18:30","end_time":"20:00","sort_order":700}
+      ]
+    },
+    {
+      "date":"2026-08-28",
+      "stops":[
+        {"name":"Departure Agrigento","city":"Agrigento","start_time":"09:00","end_time":null,"sort_order":100},
+        {"name":"Cretto di Burri","city":"Gibellina","start_time":"11:00","end_time":"12:15","sort_order":200},
+        {"name":"Saline dello Stagnone","city":"Marsala","start_time":"15:30","end_time":"18:00","sort_order":300},
+        {"name":"Arrival Trapani","city":"Trapani","start_time":"19:00","end_time":null,"sort_order":400}
+      ]
+    },
+    {
+      "date":"2026-08-29",
+      "stops":[
+        {"name":"Porta Oscura / Torre dell'Orologio","city":"Trapani","start_time":"09:30","end_time":"10:00","sort_order":100},
+        {"name":"Cattedrale San Lorenzo","city":"Trapani","start_time":"10:00","end_time":"10:30","sort_order":200},
+        {"name":"Corso Vittorio Emanuele","city":"Trapani","start_time":"10:30","end_time":"11:30","sort_order":300},
+        {"name":"Piazza Ex Mercato del Pesce","city":"Trapani","start_time":"11:45","end_time":"12:15","sort_order":400},
+        {"name":"Mura di Tramontana","city":"Trapani","start_time":"12:30","end_time":"13:15","sort_order":500}
+      ]
+    },
+    {
+      "date":"2026-08-30",
+      "stops":[
+        {"name":"Boat tour Favignana","city":"Favignana","start_time":null,"end_time":null,"sort_order":100}
+      ]
+    },
+    {
+      "date":"2026-08-31",
+      "stops":[
+        {"name":"Calette Santa Margherita","city":"Favignana","start_time":"09:30","end_time":"11:00","sort_order":100},
+        {"name":"San Vito Lo Capo","city":"San Vito Lo Capo","start_time":"11:30","end_time":"18:00","sort_order":200}
+      ]
+    },
+    {
+      "date":"2026-09-01",
+      "stops":[
+        {"name":"Cala Bianca","city":"Scopello","start_time":"09:30","end_time":"12:00","sort_order":100},
+        {"name":"Tonnara di Scopello","city":"Scopello","start_time":"14:00","end_time":"17:00","sort_order":200}
+      ]
+    },
+    {
+      "date":"2026-09-02",
+      "stops":[
+        {"name":"Riserva dello Zingaro","city":"Riserva dello Zingaro","start_time":"09:00","end_time":"17:00","sort_order":100}
+      ]
+    },
+    {
+      "date":"2026-09-03",
+      "stops":[
+        {"name":"Palazzo della Zisa","city":"Palermo","start_time":"09:00","end_time":"10:00","sort_order":100},
+        {"name":"Palazzo della Cuba","city":"Palermo","start_time":"10:20","end_time":"11:00","sort_order":200},
+        {"name":"Camera delle Meraviglie","city":"Palermo","start_time":"11:20","end_time":"12:00","sort_order":300},
+        {"name":"Santa Maria dello Spasimo","city":"Palermo","start_time":"14:00","end_time":"14:45","sort_order":400},
+        {"name":"Murale Falcone e Borsellino","city":"Palermo","start_time":"15:00","end_time":"15:20","sort_order":500},
+        {"name":"Porta Felice","city":"Palermo","start_time":"15:30","end_time":"16:00","sort_order":600},
+        {"name":"Via Cala","city":"Palermo","start_time":"16:00","end_time":"16:30","sort_order":700},
+        {"name":"La Vucciria","city":"Palermo","start_time":"16:30","end_time":"18:00","sort_order":800},
+        {"name":"Teatro Politeama Garibaldi","city":"Palermo","start_time":"18:15","end_time":"18:45","sort_order":900}
+      ]
+    },
+    {
+      "date":"2026-09-04",
+      "stops":[
+        {"name":"Cefalù / flexible return day","city":"Cefalù","start_time":null,"end_time":null,"sort_order":100}
+      ]
+    }
+  ]
+}

@@ -210,6 +210,9 @@ export function StopSheet({
         <>
           <p className="sheet-location">
             {stop.city} · {stop.kind === "experience" ? "Esperienza" : "Tappa"}
+            {stop.startTime && (
+              <small className="sheet-time"> · {stop.startTime}{stop.endTime?`–${stop.endTime}`:''}</small>
+            )}
           </p>
           <span className={`status-dot ${stop.status}`}>
             {stop.status === "done"
@@ -319,6 +322,8 @@ type StopDraft = {
   city: string;
   itemType: string;
   notes: string;
+  startTime?: string;
+  endTime?: string;
   coordinates: { lat: number; lon: number } | null;
 };
 
@@ -376,33 +381,35 @@ function StopEditor({
   };
   const save = async () => {
     setLoading(true);
-    const body = {
+      const body: any = {
       name: value.name,
       city: value.city,
       item_type: value.itemType,
       address: value.address || null,
       notes: value.notes || null,
-      ...(confirmed && chosen ? { coordinates: chosen.coordinates } : {}),
+        start_time: (value as any).startTime || null,
+        end_time: (value as any).endTime || null,
+        ...(confirmed && chosen ? { coordinates: chosen.coordinates } : {}),
+      };
+      try {
+        if (value.id)
+          await api(`/api/stops/${value.id}`, {
+            method: "PATCH",
+            body: JSON.stringify(body),
+          });
+        else
+          await api(`/api/trip/${dayId}/stops`, {
+            method: "POST",
+            body: JSON.stringify(body),
+          });
+        onSaved();
+        onClose();
+      } catch {
+        setError("Salvataggio non riuscito. Riprova.");
+      } finally {
+        setLoading(false);
+      }
     };
-    try {
-      if (value.id)
-        await api(`/api/stops/${value.id}`, {
-          method: "PATCH",
-          body: JSON.stringify(body),
-        });
-      else
-        await api(`/api/trip/${dayId}/stops`, {
-          method: "POST",
-          body: JSON.stringify(body),
-        });
-      onSaved();
-      onClose();
-    } catch {
-      setError("Salvataggio non riuscito. Riprova.");
-    } finally {
-      setLoading(false);
-    }
-  };
   return (
     <>
       <BottomSheet
@@ -507,6 +514,14 @@ function StopEditor({
                 <option value="food">Food</option>
                 <option value="nature">Natura</option>
               </select>
+            </label>
+            <label>
+              Ora inizio
+              <input type="time" value={(value as any).startTime||""} onChange={(e)=>setValue({...value, startTime: e.target.value})} />
+            </label>
+            <label>
+              Ora fine
+              <input type="time" value={(value as any).endTime||""} onChange={(e)=>setValue({...value, endTime: e.target.value})} />
             </label>
           </div>
           <label>
@@ -734,6 +749,7 @@ function StopRow({
       )}
       <button className="stop-main" onClick={onOpen}>
         <i />
+        <time className="stop-time">{stop.startTime?stop.startTime:'—'}</time>
         <span>
           <strong>{stop.name}</strong>
           <small>

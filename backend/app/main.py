@@ -331,6 +331,7 @@ async def dashboard_today(target_date: date | None = Query(None, alias="date"), 
     if result["traffic"].get("dataState")!="NOT_CONFIGURED":
         active["traffic"]=result["alertCoverage"]["traffic"]
     result["alertCoverageState"]="FULL" if active and all(v in {"LIVE","CACHE"} for v in active.values()) else "PARTIAL"
+    
     return result
 
 

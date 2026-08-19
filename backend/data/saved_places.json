@@ -1,0 +1,18 @@
+{
+  "places": [
+    {"name":"Pasticceria Savia","category":"food","coordinates":{"lat":37.5027,"lon":15.0878},"address":"Via Etnea 123, Catania","notes":null},
+    {"name":"Bam Bar","category":"food","coordinates":{"lat":37.8517,"lon":15.2860},"address":"Taormina","notes":null},
+    {"name":"Ristorante Timeo","category":"food","coordinates":{"lat":37.8516,"lon":15.2861},"address":"Taormina","notes":null},
+    {"name":"Caffè Sicilia","category":"food","coordinates":{"lat":36.8918,"lon":15.0707},"address":"Noto","notes":null},
+    {"name":"Antica Dolceria Bonajuto","category":"food","coordinates":{"lat":37.1435,"lon":14.7625},"address":"Modica","notes":null},
+    {"name":"NIVERA il gelato di natura","category":"food","coordinates":{"lat":36.825,"lon":14.980},"address":"Scicli","notes":null},
+    {"name":"Pasticceria Spalti di Sansica Benvenuto","category":"food","coordinates":{"lat":38.017,"lon":12.514},"address":"Trapani","notes":null},
+    {"name":"La Bettolaccia","category":"food","coordinates":{"lat":38.0175,"lon":12.5135},"address":"Trapani","notes":null},
+    {"name":"Ristorante Antichi Sapori","category":"food","coordinates":{"lat":38.018,"lon":12.5145},"address":"Trapani","notes":null},
+    {"name":"La Sirenetta Gelateria Artigianale","category":"food","coordinates":{"lat":38.100,"lon":12.735},"address":"San Vito Lo Capo","notes":null},
+    {"name":"Museo Civico Castello Ursino","category":"optional","coordinates":{"lat":37.5066,"lon":15.0832},"address":"Piazza Federico di Svevia, Catania","notes":"Museo civico"},
+    {"name":"Castello Maniace","category":"optional","coordinates":{"lat":37.0674,"lon":15.2921},"address":"Lungarini, Siracusa","notes":"Fortezza storica"},
+    {"name":"Cretto di Burri - Belvedere","category":"optional","coordinates":{"lat":37.7206,"lon":12.8906},"address":"Gibellina","notes":"Arte monumentale"},
+    {"name":"Museo del Sale Saline dello Stagnone","category":"optional","coordinates":{"lat":37.4416,"lon":12.4543},"address":"Marsala","notes":"Centro visite"}
+  ]
+}

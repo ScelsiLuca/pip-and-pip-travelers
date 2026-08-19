@@ -75,6 +75,8 @@ class StopIn(BaseModel):
     address: str | None = Field(default=None, max_length=300)
     notes: str | None = None
     coordinates: dict | None = None
+    start_time: str | None = None
+    end_time: str | None = None
     status: str = "planned"
     sort_order: int | None = None
 
@@ -86,6 +88,8 @@ class StopPatch(BaseModel):
     address: str | None = Field(default=None, max_length=300)
     notes: str | None = None
     coordinates: dict | None = None
+    start_time: str | None = None
+    end_time: str | None = None
     status: str | None = None
 
 

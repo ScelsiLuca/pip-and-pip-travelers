@@ -48,6 +48,8 @@ class ItineraryStop(Base):
     address: Mapped[str | None] = mapped_column(String(300), nullable=True)
     notes: Mapped[str | None] = mapped_column(Text, nullable=True)
     coordinates: Mapped[dict | None] = mapped_column(JSON, nullable=True)
+    start_time: Mapped[str | None] = mapped_column(String(5), nullable=True)
+    end_time: Mapped[str | None] = mapped_column(String(5), nullable=True)
     status: Mapped[str] = mapped_column(String(20), default="planned")
     sort_order: Mapped[int] = mapped_column(Integer, default=0, index=True)
     archived: Mapped[bool] = mapped_column(Boolean, default=False, index=True)
