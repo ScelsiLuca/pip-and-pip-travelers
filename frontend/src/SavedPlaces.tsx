@@ -182,7 +182,6 @@ function SavedPlacesSection({
   useEffect(() => {
     if (
       !editing ||
-      editing.id ||
       placeSelected ||
       searchQuery.trim().length < 2
     ) {
@@ -273,28 +272,28 @@ function SavedPlacesSection({
   };
 
   const startEdit = (place: SavedPlace) => {
-    setError("");
-    setSearchQuery("");
-    setSuggestions([]);
-    setPlaceSelected(true);
+  setError("");
+  setSearchQuery(place.name);
+  setSuggestions([]);
+  setPlaceSelected(true);
 
-    setEditing({
-      id: place.id,
-      name: place.name,
-      category: place.category,
-      address: place.address || "",
-      latitude:
-        place.latitude != null
-          ? String(place.latitude)
-          : "",
-      longitude:
-        place.longitude != null
-          ? String(place.longitude)
-          : "",
-      notes: place.notes || "",
-      link: place.link || "",
-    });
-  };
+  setEditing({
+    id: place.id,
+    name: place.name,
+    category: place.category,
+    address: place.address || "",
+    latitude:
+      place.latitude != null
+        ? String(place.latitude)
+        : "",
+    longitude:
+      place.longitude != null
+        ? String(place.longitude)
+        : "",
+    notes: place.notes || "",
+    link: place.link || "",
+  });
+};
 
   const closeEditor = () => {
     setEditing(null);
@@ -438,75 +437,72 @@ function SavedPlacesSection({
 
           {!editing.id && (
             <div className="google-place-search">
-              <label>
-                Cerca su Google Maps
+  <label>
+    {editing.id
+      ? "Cerca una nuova location su Google Maps"
+      : "Cerca su Google Maps"}
 
-                <input
-                  value={searchQuery}
-                  onChange={(event) => {
-                    setSearchQuery(event.target.value);
-                    setPlaceSelected(false);
-                    setError("");
+    <input
+      value={searchQuery}
+      onChange={(event) => {
+        setSearchQuery(event.target.value);
+        setPlaceSelected(false);
+        setSuggestions([]);
+        setError("");
 
-                    setEditing((current) =>
-                      current
-                        ? {
-                            ...current,
-                            name: "",
-                            address: "",
-                            latitude: "",
-                            longitude: "",
-                            link: "",
-                          }
-                        : current
-                    );
-                  }}
-                  placeholder={
-                    food
-                      ? "Cerca ristorante, bar, pasticceria..."
-                      : "Cerca luogo, spiaggia, museo..."
-                  }
-                  autoComplete="off"
-                />
-              </label>
+        setEditing((current) =>
+          current
+            ? {
+                ...current,
+                name: "",
+                address: "",
+                latitude: "",
+                longitude: "",
+                link: "",
+              }
+            : current
+        );
+      }}
+      placeholder={
+        food
+          ? "Cerca ristorante, bar, pasticceria..."
+          : "Cerca luogo, spiaggia, museo..."
+      }
+      autoComplete="off"
+    />
+  </label>
 
-              {searching && (
-                <small className="muted">
-                  Ricerca in corso…
-                </small>
-              )}
+  {searching && (
+    <small className="muted">
+      Ricerca in corso…
+    </small>
+  )}
 
-              {suggestions.length > 0 && (
-                <div className="google-place-suggestions">
-                  {suggestions.map((suggestion) => (
-                    <button
-                      key={suggestion.placeId}
-                      type="button"
-                      onClick={() =>
-                        selectSuggestion(suggestion)
-                      }
-                    >
-                      <span>📍</span>
-                      <strong>{suggestion.text}</strong>
-                    </button>
-                  ))}
-                </div>
-              )}
+  {suggestions.length > 0 && (
+    <div className="google-place-suggestions">
+      {suggestions.map((suggestion) => (
+        <button
+          key={suggestion.placeId}
+          type="button"
+          onClick={() =>
+            selectSuggestion(suggestion)
+          }
+        >
+          <span>📍</span>
+          <strong>{suggestion.text}</strong>
+        </button>
+      ))}
+    </div>
+  )}
 
-              {placeSelected &&
-                editing.latitude &&
-                editing.longitude && (
-                  <div className="google-place-selected">
-                    ✓ Luogo selezionato da Google Maps
-                  </div>
-                )}
-            </div>
-          )}
-
-          {editing.id && (
-            <div className="google-place-selected">
-              ✓ Location salvata
-            </div>
+  {placeSelected &&
+    editing.latitude &&
+    editing.longitude && (
+      <div className="google-place-selected">
+        ✓ Luogo selezionato da Google Maps
+      </div>
+    )}
+</div>
           )}
 
           <label>

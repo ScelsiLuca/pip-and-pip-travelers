@@ -443,6 +443,15 @@ nav{left:50%;right:auto;bottom:calc(12px + env(safe-area-inset-bottom));transfor
 }
 
 .saved-place-editor input[readonly] {
-  opacity: 0.72;
+  background: #eeeeea;
+  border-color: rgba(88, 61, 45, 0.10);
+  color: rgba(70, 55, 45, 0.72);
   cursor: default;
+  box-shadow: none;
+}
+
+.saved-place-editor input[readonly]:focus {
+  background: #eeeeea;
+  border-color: rgba(88, 61, 45, 0.10);
+  box-shadow: none;
 }
