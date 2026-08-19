@@ -18,3 +18,4 @@ frontend/android/.gradle/
 frontend/android/app/build/
 tmp/
 .aider*
+backend/data/sicily.sqlite3
