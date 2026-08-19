@@ -1733,8 +1733,13 @@ nav{left:50%;right:auto;bottom:calc(12px + env(safe-area-inset-bottom));transfor
 }
 
 .restaurant-card {
-  flex: 0 0 auto;
-  scroll-snap-align: start;
+  flex: 0 0 320px;
+
+  width: 320px;
+  min-width: 320px;
+  max-width: 320px;
+
+  box-sizing: border-box;
 }
 
 .restaurant-carousel::-webkit-scrollbar {
@@ -1752,4 +1757,1099 @@ nav{left:50%;right:auto;bottom:calc(12px + env(safe-area-inset-bottom));transfor
 
 .restaurant-carousel::-webkit-scrollbar-thumb:hover {
   background: rgba(255, 255, 255, 0.35);
+}
+
+@media (max-width: 640px) {
+  .restaurant-card {
+    flex: 0 0 86vw;
+
+    width: 86vw;
+    min-width: 86vw;
+    max-width: 86vw;
+  }
+}
+
+.restaurant-card {
+  overflow: hidden;
+}
+
+.restaurant-card h3,
+.restaurant-address {
+  overflow-wrap: anywhere;
+}
+
+/* SIMULATION IOS SELECT */
+
+.simulation-stop-picker {
+  display: grid;
+  gap: 16px;
+  margin-top: 6px;
+}
+
+.simulation-select-wrap {
+  position: relative;
+  width: 100%;
+}
+
+.simulation-select-wrap::after {
+  content: "⌄";
+  position: absolute;
+  right: 18px;
+  top: 50%;
+  transform: translateY(-54%);
+  color: var(--pip-deep);
+  font-size: 1.25rem;
+  font-weight: 700;
+  line-height: 1;
+  pointer-events: none;
+}
+
+.simulation-select {
+  width: 100%;
+  min-width: 0;
+  height: 56px;
+
+  -webkit-appearance: none;
+  appearance: none;
+
+  border: 1px solid var(--pip-border);
+  border-radius: 18px;
+
+  background: var(--pip-surface-alt);
+  color: var(--pip-text);
+
+  padding: 0 48px 0 16px;
+
+  font-family: inherit;
+  font-size: 0.96rem;
+  font-weight: 750;
+
+  outline: none;
+  cursor: pointer;
+
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,.7),
+    0 5px 16px rgba(74,56,45,.06);
+
+  transition:
+    border-color .16s ease,
+    box-shadow .16s ease,
+    transform .12s ease;
+}
+
+.simulation-select:hover {
+  border-color: rgba(196,100,58,.45);
+}
+
+.simulation-select:focus {
+  border-color: var(--pip-terracotta);
+  box-shadow:
+    0 0 0 3px rgba(196,100,58,.13),
+    0 7px 20px rgba(74,56,45,.08);
+}
+
+.simulation-select:active {
+  transform: scale(.995);
+}
+
+.simulation-selection-info {
+  display: block;
+  padding: 2px 4px 0;
+  color: var(--pip-text-soft);
+  font-size: .7rem;
+  font-weight: 650;
+}
+
+@media (max-width: 680px) {
+  .simulation-select {
+    height: 56px;
+    border-radius: 17px;
+    font-size: 16px;
+  }
+}
+
+
+
+/* SIMULATION PICKER SPACING */
+.simulation-stop-picker {
+  margin-bottom: 16px;
+}
+
+
+/* SIMULATION PICKER FIXED SPACING */
+.simulation-stop-picker {
+  padding-bottom: 16px;
+}
+
+.simulation-selection-info {
+  margin-bottom: 0;
+}
+
+
+/* SIMULATION RESET ACTION */
+
+.simulation-actions {
+  display: grid;
+  grid-template-columns: minmax(120px, .42fr) minmax(0, 1fr);
+  gap: 10px;
+  align-items: center;
+}
+
+.simulation-reset {
+  height: 52px;
+  border: 1px solid var(--pip-border);
+  border-radius: 25px;
+  background: var(--pip-surface-alt);
+  color: var(--pip-deep);
+  font-family: inherit;
+  font-weight: 850;
+  cursor: pointer;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+}
+
+.simulation-reset span {
+  font-size: 1rem;
+}
+
+.simulation-reset:active {
+  transform: scale(.985);
+}
+
+.simulation-toggle:disabled {
+  opacity: .42;
+  cursor: default;
+}
+
+@media (max-width: 420px) {
+  .simulation-actions {
+    grid-template-columns: 1fr 1.55fr;
+  }
+
+  .simulation-reset,
+  .simulation-toggle {
+    font-size: .82rem;
+  }
+}
+
+
+/* SIMULATION DAY FIXED SPACING */
+
+.simulation-sheet > .modern-date {
+  margin-bottom: 16px;
+}
+
+/*
+ * In modalità Tappa lo spacing è già gestito
+ * dal simulation-stop-picker.
+ */
+.simulation-stop-picker .modern-date {
+  margin-bottom: 0;
+}
+
+
+/* SIMULATION HOME NAVIGATION */
+
+.simulation-home-navigation {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 10px;
+
+  margin: 12px 0 18px;
+}
+
+.simulation-step {
+  min-width: 0;
+  min-height: 64px;
+
+  border: 1px solid var(--pip-border);
+  border-radius: 20px;
+
+  background: var(--pip-surface-alt);
+  color: var(--pip-deep);
+
+  padding: 10px 13px;
+
+  font-family: inherit;
+
+  display: flex;
+  align-items: center;
+  gap: 10px;
+
+  cursor: pointer;
+
+  box-shadow:
+    0 5px 18px rgba(74, 56, 45, 0.06);
+
+  transition:
+    transform 140ms ease,
+    border-color 140ms ease,
+    box-shadow 140ms ease;
+}
+
+.simulation-step:hover:not(:disabled) {
+  border-color: var(--pip-terracotta);
+  box-shadow:
+    0 7px 22px rgba(74, 56, 45, 0.09);
+}
+
+.simulation-step:active:not(:disabled) {
+  transform: scale(.985);
+}
+
+.simulation-step > span:not(.simulation-step-arrow) {
+  min-width: 0;
+  display: grid;
+  gap: 2px;
+}
+
+.simulation-step small {
+  font-size: .56rem;
+  font-weight: 850;
+  letter-spacing: .09em;
+
+  color: var(--pip-text-soft);
+}
+
+.simulation-step strong {
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+
+  font-size: .78rem;
+  font-weight: 850;
+}
+
+.simulation-step-arrow {
+  flex: 0 0 auto;
+
+  width: 34px;
+  height: 34px;
+
+  border-radius: 50%;
+
+  display: grid;
+  place-items: center;
+
+  background: var(--pip-deep);
+  color: #fff;
+
+  font-size: 1.1rem;
+}
+
+.simulation-step-next {
+  justify-content: flex-end;
+  text-align: right;
+}
+
+.simulation-step-previous {
+  justify-content: flex-start;
+  text-align: left;
+}
+
+.simulation-step:disabled {
+  opacity: .38;
+  cursor: default;
+}
+
+.simulation-step:disabled .simulation-step-arrow {
+  background: var(--pip-text-soft);
+}
+
+@media (max-width: 480px) {
+  .simulation-home-navigation {
+    gap: 8px;
+  }
+
+  .simulation-step {
+    min-height: 60px;
+    padding: 9px 10px;
+  }
+
+  .simulation-step-arrow {
+    width: 31px;
+    height: 31px;
+  }
+
+  .simulation-step strong {
+    font-size: .72rem;
+  }
+
+  .simulation-step small {
+    font-size: .5rem;
+  }
+}
+
+
+/* SIMULATION HOME NAVIGATION V2 */
+.simulation-home-navigation {
+  position: fixed !important;
+  top: 86px !important;
+  left: 12px !important;
+  right: 12px !important;
+  z-index: 9999 !important;
+
+  display: flex !important;
+  justify-content: space-between !important;
+  align-items: flex-start !important;
+
+  pointer-events: none;
+}
+
+.simulation-home-navigation .simulation-step {
+  display: flex !important;
+  width: min(43vw, 190px) !important;
+  min-height: 58px !important;
+
+  background: var(--pip-surface, #fff) !important;
+  border: 1px solid var(--pip-border, #ddd) !important;
+  border-radius: 18px !important;
+
+  padding: 9px 11px !important;
+
+  box-shadow: 0 7px 24px rgba(0,0,0,.14) !important;
+
+  pointer-events: auto;
+}
+
+.simulation-home-navigation .simulation-step-next {
+  margin-left: auto;
+}
+
+.simulation-home-navigation .simulation-step:disabled {
+  opacity: .35 !important;
+}
+
+@media (max-width: 480px) {
+  .simulation-home-navigation {
+    top: 76px !important;
+    left: 8px !important;
+    right: 8px !important;
+  }
+
+  .simulation-home-navigation .simulation-step {
+    width: 46% !important;
+  }
+}
+
+
+/* HERO GPS LOCATION */
+
+.hero-title-row {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 24px;
+}
+
+.hero-title-row h1 {
+  margin-right: auto;
+}
+
+.hero-gps-location {
+  flex: 0 0 auto;
+
+  margin-top: 10px;
+
+  padding: 10px 14px;
+
+  border: 1px solid rgba(92, 64, 45, .14);
+  border-radius: 18px;
+
+  background: rgba(255, 250, 242, .72);
+
+  text-align: right;
+
+  backdrop-filter: blur(10px);
+}
+
+.hero-gps-location small {
+  display: block;
+
+  margin-bottom: 2px;
+
+  font-size: .58rem;
+  font-weight: 800;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+
+  opacity: .65;
+}
+
+.hero-gps-location strong {
+  display: block;
+
+  font-size: 1rem;
+  font-weight: 850;
+}
+
+@media (max-width: 600px) {
+  .hero-title-row {
+    gap: 10px;
+  }
+
+  .hero-gps-location {
+    margin-top: 5px;
+    padding: 8px 10px;
+  }
+
+  .hero-gps-location strong {
+    font-size: .85rem;
+  }
+}
+
+
+/* HERO GPS + SIMULATION ARROWS REFINEMENT */
+
+.hero-gps-location {
+  min-width: 170px !important;
+  padding: 18px 24px !important;
+  border-radius: 24px !important;
+}
+
+.hero-gps-location small {
+  font-size: .72rem !important;
+  letter-spacing: .14em !important;
+  margin-bottom: 4px !important;
+}
+
+.hero-gps-location strong {
+  font-size: 2rem !important;
+  line-height: 1 !important;
+  font-weight: 900 !important;
+}
+
+/* Le frecce restano visibili ma sembrano dietro alla UI */
+.simulation-home-navigation .simulation-step {
+  opacity: .28 !important;
+  filter: saturate(.45) !important;
+
+  transition:
+    opacity 180ms ease,
+    filter 180ms ease,
+    transform 180ms ease,
+    box-shadow 180ms ease !important;
+}
+
+/* Hover desktop */
+.simulation-home-navigation .simulation-step:hover:not(:disabled) {
+  opacity: 1 !important;
+  filter: saturate(1) !important;
+  transform: translateY(-1px) !important;
+
+  box-shadow:
+    0 10px 28px rgba(0,0,0,.16) !important;
+}
+
+/* Pressione touch/mobile */
+.simulation-home-navigation .simulation-step:active:not(:disabled) {
+  opacity: 1 !important;
+  filter: saturate(1) !important;
+  transform: scale(.98) !important;
+}
+
+/* Disabilitate ancora pi? discrete */
+.simulation-home-navigation .simulation-step:disabled {
+  opacity: .12 !important;
+  filter: saturate(.2) !important;
+}
+
+@media (max-width: 600px) {
+  .hero-gps-location {
+    min-width: 130px !important;
+    padding: 14px 18px !important;
+  }
+
+  .hero-gps-location small {
+    font-size: .62rem !important;
+  }
+
+  .hero-gps-location strong {
+    font-size: 1.55rem !important;
+  }
+}
+
+
+/* HERO GPS LOCATION V2 */
+
+.hero-title-row {
+  position: relative;
+}
+
+.hero-gps-location {
+  position: absolute !important;
+
+  top: 26px !important;
+  right: 270px !important;
+
+  min-width: 210px !important;
+
+  padding: 18px 24px !important;
+
+  border: 0 !important;
+  border-radius: 0 !important;
+
+  background: transparent !important;
+  box-shadow: none !important;
+  backdrop-filter: none !important;
+
+  text-align: left !important;
+}
+
+.hero-gps-location small {
+  display: block !important;
+
+  margin-bottom: 1px !important;
+
+  font-family: inherit !important;
+  font-size: 1rem !important;
+  font-weight: 700 !important;
+  line-height: 1 !important;
+  letter-spacing: .08em !important;
+
+  color: var(--pip-deep) !important;
+
+  opacity: .65 !important;
+}
+
+.hero-gps-location strong {
+  display: block !important;
+
+  font-family: inherit !important;
+
+  font-size: 3rem !important;
+  font-weight: 900 !important;
+  line-height: .95 !important;
+  letter-spacing: -.04em !important;
+
+  color: var(--pip-deep) !important;
+}
+
+/* Mobile */
+@media (max-width: 700px) {
+  .hero-gps-location {
+    top: 20px !important;
+    right: 145px !important;
+
+    min-width: 120px !important;
+
+    padding: 10px !important;
+  }
+
+  .hero-gps-location small {
+    font-size: .7rem !important;
+  }
+
+  .hero-gps-location strong {
+    font-size: 2rem !important;
+  }
+}
+
+
+/* HERO GPS LOCATION V3 - CENTERED */
+
+.hero-gps-location {
+  position: absolute !important;
+
+  top: 70px !important;
+  left: 62% !important;
+  right: auto !important;
+
+  transform: translateX(-50%) !important;
+
+  min-width: 220px !important;
+  padding: 0 !important;
+
+  background: transparent !important;
+  border: 0 !important;
+  box-shadow: none !important;
+
+  text-align: center !important;
+}
+
+.hero-gps-location small {
+  display: block !important;
+
+  margin-bottom: 4px !important;
+
+  font-family: inherit !important;
+  font-size: 1rem !important;
+  font-weight: 700 !important;
+  letter-spacing: .10em !important;
+
+  color: var(--pip-deep) !important;
+  opacity: .65 !important;
+}
+
+.hero-gps-location strong {
+  display: block !important;
+
+  font-family: inherit !important;
+  font-size: 3.4rem !important;
+  font-weight: 900 !important;
+  line-height: .95 !important;
+  letter-spacing: -.045em !important;
+
+  color: var(--pip-deep) !important;
+}
+
+@media (max-width: 700px) {
+  .hero-gps-location {
+    top: 72px !important;
+    left: 65% !important;
+
+    min-width: 120px !important;
+  }
+
+  .hero-gps-location small {
+    font-size: .7rem !important;
+  }
+
+  .hero-gps-location strong {
+    font-size: 2rem !important;
+  }
+}
+
+
+/* HERO GPS LOCATION V4 */
+
+.hero-gps-location {
+  top: 88px !important;
+  left: 70% !important;
+  right: auto !important;
+
+  transform: translateX(-50%) !important;
+
+  min-width: 220px !important;
+
+  text-align: center !important;
+}
+
+.hero-gps-location small {
+  font-size: 1rem !important;
+}
+
+.hero-gps-location strong {
+  font-size: 3.6rem !important;
+}
+
+@media (max-width: 700px) {
+  .hero-gps-location {
+    top: 82px !important;
+    left: 70% !important;
+  }
+
+  .hero-gps-location strong {
+    font-size: 2.2rem !important;
+  }
+}
+
+
+/* HERO GPS LOCATION V5 */
+
+.hero-gps-location {
+  left: 78% !important;
+}
+
+@media (max-width: 700px) {
+  .hero-gps-location {
+    left: 75% !important;
+  }
+}
+
+
+/* HERO GPS LOCATION V6 */
+
+.hero-gps-location {
+  left: 84% !important;
+}
+
+@media (max-width: 700px) {
+  .hero-gps-location {
+    left: 80% !important;
+  }
+}
+
+
+/* HERO GPS LOCATION V7 - LOCATION PANEL */
+
+.hero-gps-location {
+  position: absolute !important;
+
+  top: 105px !important;
+  left: auto !important;
+  right: 285px !important;
+
+  transform: none !important;
+
+  width: 260px !important;
+  min-width: 0 !important;
+
+  padding: 18px 22px 20px !important;
+
+  background: rgba(255, 250, 242, .55) !important;
+  border: 1px solid rgba(74, 52, 38, .12) !important;
+  border-radius: 24px !important;
+
+  box-shadow:
+    0 8px 28px rgba(74, 52, 38, .05) !important;
+
+  backdrop-filter: blur(8px) !important;
+
+  text-align: left !important;
+}
+
+.hero-gps-location small {
+  display: block !important;
+
+  margin-bottom: 5px !important;
+
+  font-size: .68rem !important;
+  font-weight: 800 !important;
+  letter-spacing: .16em !important;
+
+  color: var(--pip-deep) !important;
+  opacity: .55 !important;
+}
+
+.hero-gps-location strong {
+  display: block !important;
+
+  font-family: inherit !important;
+
+  font-size: 3.2rem !important;
+  font-weight: 900 !important;
+  line-height: .95 !important;
+  letter-spacing: -.045em !important;
+
+  color: var(--pip-deep) !important;
+}
+
+/* piccola linea decorativa */
+.hero-gps-location::after {
+  content: "";
+  display: block;
+
+  width: 42px;
+  height: 3px;
+
+  margin-top: 13px;
+
+  border-radius: 999px;
+
+  background: var(--pip-terracotta);
+  opacity: .75;
+}
+
+@media (max-width: 700px) {
+  .hero-gps-location {
+    top: 80px !important;
+    right: 120px !important;
+
+    width: 145px !important;
+
+    padding: 12px 14px !important;
+  }
+
+  .hero-gps-location strong {
+    font-size: 2rem !important;
+  }
+
+  .hero-gps-location::after {
+    width: 28px;
+    margin-top: 8px;
+  }
+}
+
+
+/* HERO GPS LOCATION V8 - BOTTOM RIGHT */
+
+.hero-gps-location {
+  position: absolute !important;
+
+  top: auto !important;
+  left: auto !important;
+  right: 70px !important;
+  bottom: 48px !important;
+
+  transform: none !important;
+
+  width: 250px !important;
+  min-width: 0 !important;
+
+  padding: 18px 22px 20px !important;
+
+  text-align: left !important;
+}
+
+/* Manteniamo Roma importante ma senza competere col titolo */
+.hero-gps-location strong {
+  font-size: 3rem !important;
+}
+
+/* Smartphone */
+@media (max-width: 700px) {
+  .hero-gps-location {
+    top: auto !important;
+    left: auto !important;
+    right: 22px !important;
+    bottom: 28px !important;
+
+    width: 150px !important;
+    padding: 12px 14px !important;
+  }
+
+  .hero-gps-location strong {
+    font-size: 2rem !important;
+  }
+}
+
+
+/* HERO GPS LOCATION V9 - TRUE BOTTOM RIGHT */
+
+.hero-gps-location {
+  position: absolute !important;
+
+  top: auto !important;
+  left: auto !important;
+  right: 32px !important;
+  bottom: 24px !important;
+
+  transform: none !important;
+
+  width: 230px !important;
+  min-width: 0 !important;
+
+  padding: 16px 20px 18px !important;
+
+  text-align: left !important;
+}
+
+.hero-gps-location strong {
+  font-size: 2.8rem !important;
+}
+
+@media (max-width: 700px) {
+  .hero-gps-location {
+    top: auto !important;
+    left: auto !important;
+    right: 14px !important;
+    bottom: 16px !important;
+
+    width: 145px !important;
+    padding: 10px 12px 12px !important;
+  }
+
+  .hero-gps-location strong {
+    font-size: 1.9rem !important;
+  }
+}
+
+
+/* HERO GPS POSITION FIX - anchor to full banner */
+
+.hero {
+  position: relative !important;
+}
+
+/*
+ * IMPORTANT:
+ * non deve essere il riferimento dell'absolute positioning.
+ * In questo modo .hero-gps-location si ancora all'intero .hero.
+ */
+.hero-title-row {
+  position: static !important;
+}
+
+.hero-gps-location {
+  position: absolute !important;
+
+  top: auto !important;
+  left: auto !important;
+
+  right: 34px !important;
+  bottom: 28px !important;
+
+  transform: none !important;
+
+  width: 230px !important;
+  min-width: 0 !important;
+
+  padding: 16px 20px 18px !important;
+
+  z-index: 2 !important;
+}
+
+@media (max-width: 700px) {
+  .hero-gps-location {
+    top: auto !important;
+    left: auto !important;
+
+    right: 18px !important;
+    bottom: 18px !important;
+
+    width: 150px !important;
+  }
+}
+
+
+/* HERO LIVE CLUSTER */
+
+.hero-live-cluster {
+  position: absolute !important;
+
+  right: 32px !important;
+  bottom: 24px !important;
+
+  display: flex;
+  align-items: stretch;
+  gap: 12px;
+
+  z-index: 2;
+}
+
+/* Ora il posizionamento lo gestisce il cluster */
+.hero-live-cluster .hero-gps-location {
+  position: relative !important;
+
+  top: auto !important;
+  right: auto !important;
+  bottom: auto !important;
+  left: auto !important;
+
+  width: 210px !important;
+
+  margin: 0 !important;
+
+  transform: none !important;
+}
+
+.hero-weather-widget {
+  width: 210px;
+
+  padding: 16px 20px 18px;
+
+  background: rgba(255, 250, 242, .55);
+  border: 1px solid rgba(74, 52, 38, .12);
+  border-radius: 24px;
+
+  box-shadow:
+    0 8px 28px rgba(74, 52, 38, .05);
+
+  backdrop-filter: blur(8px);
+
+  color: var(--pip-deep);
+}
+
+.hero-weather-widget > small {
+  display: block;
+
+  margin-bottom: 5px;
+
+  font-size: .68rem;
+  font-weight: 800;
+  letter-spacing: .16em;
+
+  opacity: .55;
+}
+
+.hero-weather-main {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+}
+
+.hero-weather-main strong {
+  font-size: 2.8rem;
+  font-weight: 900;
+  line-height: .95;
+  letter-spacing: -.045em;
+}
+
+.hero-weather-main span {
+  font-size: .85rem;
+  font-weight: 750;
+}
+
+.hero-weather-widget p {
+  margin: 9px 0 0;
+
+  font-size: .72rem;
+  font-weight: 700;
+
+  opacity: .65;
+}
+
+.hero-weather-widget::after {
+  content: "";
+
+  display: block;
+
+  width: 42px;
+  height: 3px;
+
+  margin-top: 12px;
+
+  border-radius: 999px;
+
+  background: var(--pip-terracotta);
+  opacity: .75;
+}
+
+@media (max-width: 700px) {
+  .hero-live-cluster {
+    right: 14px !important;
+    bottom: 16px !important;
+
+    gap: 7px;
+  }
+
+  .hero-live-cluster .hero-gps-location,
+  .hero-weather-widget {
+    width: 135px !important;
+
+    padding: 10px 12px 12px !important;
+  }
+
+  .hero-weather-main strong {
+    font-size: 1.9rem;
+  }
+
+  .hero-weather-main span {
+    font-size: .68rem;
+  }
+
+  .hero-weather-widget p {
+    font-size: .62rem;
+  }
+}
+
+
+/* HERO GPS ADDRESS */
+
+.hero-gps-address {
+  margin: 10px 0 0 !important;
+
+  max-width: 200px;
+
+  font-size: .72rem !important;
+  font-weight: 650 !important;
+  line-height: 1.3 !important;
+
+  color: var(--pip-deep) !important;
+
+  opacity: .62;
+}
+
+@media (max-width: 700px) {
+  .hero-gps-address {
+    margin-top: 6px !important;
+
+    max-width: 125px;
+
+    font-size: .58rem !important;
+  }
 }

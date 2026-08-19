@@ -175,11 +175,25 @@ function Today({
   refreshToken,
   onRefresh,
   onGuide,
+  simulation,
+  onSimulationChange,
 }: {
   trip: Trip;
   refreshToken: number;
   onRefresh: () => void;
   onGuide: (name: string) => void;
+  simulation: {
+    enabled: boolean;
+    date: string;
+    mode: "day" | "stop";
+    stopId: number | null;
+  };
+  onSimulationChange: (value: {
+    enabled: boolean;
+    date: string;
+    mode: "day" | "stop";
+    stopId: number | null;
+  }) => void;
 }) {
   const [live, setLive] = useState<Dashboard | null>(null);
   const [loading, setLoading] = useState(true);
@@ -187,18 +201,16 @@ function Today({
   useState<RouteOptions | null>(null);
   const [nextStopRoutesLoading, setNextStopRoutesLoading] =
   useState(false);
-  const [simulation, setSimulation] = useState({
-    enabled: false,
-    date: "2026-08-21",
-  });
-
-  const [mapPosition, setMapPosition] = useState<Coordinates | null>(null);
+const [mapPosition, setMapPosition] = useState<Coordinates | null>(null);
   const [realPosition, setRealPosition] = useState<DevicePosition | null>(null);
   const [simulatedPosition, setSimulatedPosition] = useState<{
     date: string;
     coordinates: Coordinates;
   } | null>(null);
   const [gpsResolved, setGpsResolved] = useState(false);
+
+  const [gpsCity, setGpsCity] = useState<string | null>(null);
+  const [gpsAddress, setGpsAddress] = useState<string | null>(null);
 
   const latestRealPosition = useRef<DevicePosition | null>(null);
 
@@ -267,6 +279,61 @@ function Today({
       void watch?.remove();
     };
   }, []);
+
+  /* REAL GPS CITY */
+  useEffect(() => {
+    if (!realPosition) {
+      setGpsCity(null);
+      return;
+    }
+
+    const controller = new AbortController();
+
+    const params = new URLSearchParams({
+      latitude: String(realPosition.lat),
+      longitude: String(realPosition.lon),
+    });
+
+    api<{
+      location: string;
+      address: string | null;
+      addressProvider: string | null;
+    }>(
+      `/api/location/current?${params}`,
+      { signal: controller.signal },
+    )
+      .then((result) => {
+        if (!controller.signal.aborted) {
+          const location = result.location?.trim();
+
+          /*
+           * Il reverse geocoder pu? restituire una stringa
+           * pi? completa. Nell'header mostriamo soltanto
+           * la prima parte.
+           */
+          setGpsCity(
+            location
+              ? location.split(",")[0].trim()
+              : null,
+          );
+
+          setGpsAddress(
+            result.address?.trim() || null,
+          );
+        }
+      })
+      .catch(() => {
+        if (!controller.signal.aborted) {
+          setGpsCity(null);
+          setGpsAddress(null);
+        }
+      });
+
+    return () => controller.abort();
+  }, [
+    realPosition?.lat,
+    realPosition?.lon,
+  ]);
 
   const effectiveDate = simulation.enabled
     ? simulation.date
@@ -396,14 +463,29 @@ function Today({
 
   const homeDay = day || fallbackDay;
 
-  const primaryLocation = String(
+  const simulatedSelectedStop =
+    simulation.enabled &&
+    simulation.mode === "stop" &&
+    simulation.stopId != null
+      ? day?.stops?.find(
+          (item) => item.id === simulation.stopId,
+        ) || null
+      : null;
+
+
+  const basePrimaryLocation = String(
     (context as Record<string, unknown>).primaryLocation ||
       homeDay?.baseCity ||
       homeDay?.title ||
       "Sicilia",
   );
+  const primaryLocation =
+    simulatedSelectedStop?.city ||
+    basePrimaryLocation;
 
-  const stop = day ? nextStop(day) : null;
+  const stop =
+    simulatedSelectedStop ||
+    (day ? nextStop(day) : null);
   const nextStopOrigin = realPosition;
   const discoveryStop = stop || (homeDay ? nextStop(homeDay) : null);
   const recommendationLocation = (() => {
@@ -526,6 +608,89 @@ function Today({
     relevantServices.push(["Mare", live?.sea]);
   }
 
+
+  /* SIMULATION STOP NAVIGATION */
+
+  const simulationTimeline = useMemo(
+    () =>
+      trip.days
+        .flatMap((tripDay) =>
+          (tripDay.stops || []).map((item) => ({
+            stop: item,
+            date: tripDay.date,
+            dayNumber: tripDay.dayNumber,
+          })),
+        )
+        .sort((a, b) => {
+          if (a.dayNumber !== b.dayNumber) {
+            return a.dayNumber - b.dayNumber;
+          }
+
+          const aTime = a.stop.startTime || "";
+          const bTime = b.stop.startTime || "";
+
+          if (aTime && bTime && aTime !== bTime) {
+            return aTime.localeCompare(bTime);
+          }
+
+          if (aTime && !bTime) return -1;
+          if (!aTime && bTime) return 1;
+
+          return (
+            Number(a.stop.sortOrder || 0) -
+            Number(b.stop.sortOrder || 0)
+          );
+        }),
+    [trip.days],
+  );
+
+  const simulationTimelineIndex = useMemo(() => {
+    if (!simulation.enabled) return -1;
+
+    if (simulation.stopId != null) {
+      return simulationTimeline.findIndex(
+        (item) => item.stop.id === simulation.stopId,
+      );
+    }
+
+    /*
+     * In modalità Giorno la simulazione parte
+     * dalla prima tappa cronologica di quel giorno.
+     */
+    return simulationTimeline.findIndex(
+      (item) => item.date === simulation.date,
+    );
+  }, [
+    simulation.enabled,
+    simulation.date,
+    simulation.stopId,
+    simulationTimeline,
+  ]);
+
+  const previousSimulationStop =
+    simulationTimelineIndex > 0
+      ? simulationTimeline[simulationTimelineIndex - 1]
+      : null;
+
+  const nextSimulationStop =
+    simulationTimelineIndex >= 0 &&
+    simulationTimelineIndex < simulationTimeline.length - 1
+      ? simulationTimeline[simulationTimelineIndex + 1]
+      : null;
+
+  const moveSimulationTo = (
+    target: (typeof simulationTimeline)[number] | null,
+  ) => {
+    if (!target) return;
+
+    onSimulationChange({
+      enabled: true,
+      mode: "stop",
+      date: target.date,
+      stopId: target.stop.id,
+    });
+  };
+
   return (
     <main>
       <header className="hero">
@@ -539,7 +704,68 @@ function Today({
                 : "VIAGGIO CONCLUSO"}
           </p>
 
-          <h1>Pip &amp; Pip Travelers</h1>
+          <div className="hero-title-row">
+            <h1>Pip &amp; Pip Travelers</h1>
+
+            {gpsCity && (
+              <div className="hero-live-cluster">
+                <div className="hero-gps-location">
+                  <small>SEI A</small>
+                  <strong>{gpsCity}</strong>
+
+                  {gpsAddress && (
+                    <p className="hero-gps-address">
+                      {gpsAddress}
+                    </p>
+                  )}
+                </div>
+
+                {live?.weather?.current && (
+                  <div className="hero-weather-widget">
+                    <small>METEO ORA</small>
+
+                    <div className="hero-weather-main">
+                      <strong>
+                        {Math.round(
+                          Number(
+                            live.weather.current.temperature_2m,
+                          ),
+                        )}&deg;
+                      </strong>
+
+                      <span>
+                        {(() => {
+                          const code = Number(
+                            live.weather.current?.weather_code ??
+                              -1,
+                          );
+
+                          if (code === 0) return "Sereno";
+                          if (code <= 3) return "Poco nuvoloso";
+                          if (code <= 67) return "Pioggia";
+                          if (code <= 77) return "Neve";
+                          if (code >= 95) return "Temporali";
+
+                          return "Variabile";
+                        })()}
+                      </span>
+                    </div>
+
+                    <p>
+                      Vento{" "}
+                      {Math.round(
+                        Number(
+                          live.weather.current.wind_speed_10m ||
+                            0,
+                        ),
+                      )}{" "}
+                      km/h
+                    </p>
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
           <p className="sub">
             Il nostro viaggio in Sicilia
           </p>
@@ -573,6 +799,41 @@ function Today({
           ↻
         </button>
       </header>
+
+      {simulation.enabled && (
+        <div className="simulation-home-navigation">
+          <button
+            type="button"
+            className="simulation-step simulation-step-previous"
+            disabled={!previousSimulationStop}
+            onClick={() => moveSimulationTo(previousSimulationStop)}
+          >
+            <span className="simulation-step-arrow">&larr;</span>
+            <span>
+              <small>TAPPA PRECEDENTE</small>
+              <strong>
+                {previousSimulationStop?.stop.name || "Inizio viaggio"}
+              </strong>
+            </span>
+          </button>
+
+          <button
+            type="button"
+            className="simulation-step simulation-step-next"
+            disabled={!nextSimulationStop}
+            onClick={() => moveSimulationTo(nextSimulationStop)}
+          >
+            <span>
+              <small>PROSSIMA TAPPA</small>
+              <strong>
+                {nextSimulationStop?.stop.name || "Fine viaggio"}
+              </strong>
+            </span>
+            <span className="simulation-step-arrow">&rarr;</span>
+          </button>
+        </div>
+      )}
+
 
       {!navigator.onLine && (
         <div className="offline">
@@ -611,7 +872,7 @@ function Today({
               day={day || null}
               days={trip.days}
               simulation={simulation}
-              onSimulationChange={setSimulation}
+              onSimulationChange={onSimulationChange}
               showNextCard={false}
               onPositionChange={(position) => {
                 if (!simulation.enabled) {
@@ -1419,8 +1680,57 @@ function Placeholder({ kind }: { kind: "alerts" | "more" }) {
 }
 
 export default function App() {
-  const [trip, setTrip] = useState<Trip | null>(null);
+const [trip, setTrip] = useState<Trip | null>(null);
   const [view, setView] = useState<View>("today");
+  const [simulation, setSimulation] = useState<{
+    enabled: boolean;
+    date: string;
+    mode: "day" | "stop";
+    stopId: number | null;
+  }>(() => {
+    try {
+      const saved = window.localStorage.getItem("pip-simulation");
+
+      if (saved) {
+        const parsed = JSON.parse(saved);
+
+        if (
+          typeof parsed?.enabled === "boolean" &&
+          typeof parsed?.date === "string"
+        ) {
+          return {
+            enabled: parsed.enabled,
+            date: parsed.date,
+            mode: parsed?.mode === "stop" ? "stop" : "day",
+            stopId:
+              typeof parsed?.stopId === "number"
+                ? parsed.stopId
+                : null,
+          };
+        }
+      }
+    } catch {
+      // Se il valore salvato non ? valido, usa i default.
+    }
+
+    return {
+      enabled: false,
+      date: "2026-08-21",
+      mode: "day",
+      stopId: null,
+    };
+  });
+  useEffect(() => {
+    try {
+      window.localStorage.setItem(
+        "pip-simulation",
+        JSON.stringify(simulation),
+      );
+    } catch {
+      // localStorage potrebbe non essere disponibile.
+    }
+  }, [simulation]);
+
   const [tick, setTick] = useState(0);
   const [error, setError] = useState("");
   const [guideTarget,setGuideTarget]=useState("");
@@ -1466,6 +1776,8 @@ export default function App() {
           refreshToken={tick}
           onRefresh={() => setTick((x) => x + 1)}
           onGuide={name=>{setGuideTarget(name);setView("guide")}}
+          simulation={simulation}
+          onSimulationChange={setSimulation}
         />
       )}{" "}
       {view === "trip" && <ModernTripView trip={trip} onChanged={changed} onGuide={name=>{setGuideTarget(name);setView("guide")}} />}{" "}

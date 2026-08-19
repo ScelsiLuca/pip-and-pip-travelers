@@ -293,6 +293,127 @@ def reset_original(db:Session=Depends(get_db)):
     seed_database(db);return {"status":"ok"}
 
 
+@app.get("/api/location/current")
+async def current_location(
+    latitude: float = Query(..., ge=-90, le=90),
+    longitude: float = Query(..., ge=-180, le=180),
+    db: Session = Depends(get_db),
+):
+    city = await reverse_geocode(
+        db,
+        latitude,
+        longitude,
+    )
+
+    google_address = None
+    google_status = "NOT_CONFIGURED"
+    google_error = None
+    google_debug_results = []
+
+    if settings.google_places_api_key:
+        try:
+            async with httpx.AsyncClient(timeout=8) as client:
+                response = await client.get(
+                    "https://maps.googleapis.com/maps/api/geocode/json",
+                    params={
+                        "latlng": f"{latitude},{longitude}",
+                        "language": "it",
+                        "key": settings.google_places_api_key,
+                    },
+                )
+
+                response.raise_for_status()
+
+                payload = response.json()
+
+                google_status = payload.get(
+                    "status",
+                    "UNKNOWN",
+                )
+
+                google_error = payload.get(
+                    "error_message",
+                )
+
+                results = payload.get("results") or []
+
+                google_debug_results = [
+                    {
+                        "formattedAddress": item.get("formatted_address"),
+                        "types": item.get("types"),
+                        "location": (
+                            item.get("geometry", {})
+                                .get("location")
+                        ),
+                        "placeId": item.get("place_id"),
+                    }
+                    for item in results[:3]
+                ]
+
+                if google_status == "OK" and results:
+
+                    city_normalized = (
+                        city or ""
+                    ).strip().casefold()
+
+                    # 1. Street address che contiene
+                    #    esplicitamente la citt? GPS.
+                    preferred = next(
+                        (
+                            item
+                            for item in results
+                            if "street_address"
+                            in (item.get("types") or [])
+                            and city_normalized
+                            in (
+                                item.get("formatted_address")
+                                or ""
+                            ).casefold()
+                        ),
+                        None,
+                    )
+
+                    # 2. Qualunque risultato Google
+                    #    che contenga la citt? GPS.
+                    if preferred is None:
+                        preferred = next(
+                            (
+                                item
+                                for item in results
+                                if city_normalized
+                                in (
+                                    item.get("formatted_address")
+                                    or ""
+                                ).casefold()
+                            ),
+                            None,
+                        )
+
+                    # 3. Non mostriamo un indirizzo di
+                    #    un'altra citt?.
+                    google_address = (
+                        preferred.get("formatted_address")
+                        if preferred
+                        else None
+                    )
+
+        except Exception as exc:
+            google_status = "HTTP_ERROR"
+            google_error = str(exc)
+
+    return {
+        "location": city or "Posizione GPS",
+        "address": google_address,
+        "addressProvider": (
+            "Google Maps"
+            if google_address
+            else None
+        ),
+        "googleStatus": google_status,
+        "googleError": google_error,
+    }
+
+
 @app.get("/api/geocode/preview")
 async def preview_geocode(q:str=Query(...,min_length=3,max_length=300)):
     try:return await geocode_preview(q)
