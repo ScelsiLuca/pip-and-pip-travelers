@@ -322,6 +322,8 @@ type StopDraft = {
   city: string;
   itemType: string;
   notes: string;
+  startTime?: string;
+  endTime?: string;
   coordinates: { lat: number; lon: number } | null;
 };
 

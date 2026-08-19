@@ -20,7 +20,7 @@ def day_one(db):return db.scalar(select(TripDay).where(TripDay.day_number==1))
 def test_seed_creates_editable_rows_and_preserves_original_backup():
     with seeded() as db:
         day=day_one(db)
-        assert len(day.stops)==8 and all(stop.original_key for stop in day.stops)
+        assert len(day.stops)==7 and all(stop.original_key for stop in day.stops)
 
 
 def test_reorder_persists_and_serialization_uses_custom_order():
@@ -28,7 +28,7 @@ def test_reorder_persists_and_serialization_uses_custom_order():
         day=day_one(db);items=list(day.stops);order=[items[1],items[0],*items[2:]]
         reorder_timeline(day.id,ReorderRequest(items=[{"kind":"stop","id":item.id} for item in order]),db)
         db.expire_all();day=day_one(db)
-        assert [item["name"] for item in serialize_day(day)["stops"]][:2]==["Pescheria (mercato)","Via Crociferi (via delle chiese)"]
+        assert [item["name"] for item in serialize_day(day)["stops"]][:2]==["Piazza del Duomo + Fontana dell'Elefante","Pescheria di Catania"]
 
 
 def test_address_edit_persists_without_changing_coordinates():
@@ -85,4 +85,4 @@ def test_transfer_addresses_are_editable():
 def test_reset_original_restores_seed_order_safely():
     with seeded() as db:
         day=day_one(db);day.stops[0].sort_order=9999;db.commit();reset_original(db);db.expire_all()
-        assert serialize_day(day_one(db))["stops"][0]["name"]=="Via Crociferi (via delle chiese)"
+        assert serialize_day(day_one(db))["stops"][0]["name"]=="Pescheria di Catania"

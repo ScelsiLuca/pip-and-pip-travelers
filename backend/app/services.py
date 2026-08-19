@@ -9,7 +9,7 @@ import httpx
 from sqlalchemy import delete, func, select
 from sqlalchemy.orm import Session
 from .config import settings
-from .models import Activity, CacheEntry, ChecklistItem, ItineraryStop, Route, TripDay
+from .models import Activity, CacheEntry, ChecklistItem, ItineraryStop, Route, SavedPlace, TripDay
 
 ROME = ZoneInfo("Europe/Rome")
 TRIP_START = date(2026, 8, 21)
@@ -101,7 +101,7 @@ def seed_database(db: Session) -> None:
         for route in item["routes"]:
             db.add(Route(trip_day_id=day.id, **route))
         # create itinerary stops directly from seed if provided
-        for stop in item.get("stops", []):
+        for stop in stops_overlay.get(item["date"], item.get("stops", [])):
             db.add(ItineraryStop(
                 trip_day_id=day.id,
                 name=stop.get("name"),
@@ -114,7 +114,7 @@ def seed_database(db: Session) -> None:
                 end_time=stop.get("end_time"),
                 status=stop.get("status", "planned"),
                 sort_order=stop.get("sort_order") or 0,
-                original_key=stop.get("original_key")
+                original_key=stop.get("original_key") or f"day-{day.day_number}-stop-{stop.get('sort_order', 0)}"
             ))
     db.commit(); ensure_editable_itinerary(db)
     # optional saved places seed (food recommendations)
@@ -132,8 +132,8 @@ def seed_database(db: Session) -> None:
                         address=entry.get("address"), notes=entry.get("notes"), link=entry.get("link")
                     ))
             db.commit()
-        except Exception:
-            pass
+        except (OSError, json.JSONDecodeError) as exc:
+            print(f"Unable to load saved_places.json: {exc}")
 
 
 def serialize_day(day: TripDay | None) -> dict | None:
@@ -311,7 +311,7 @@ def current_trip_context(db: Session, now: datetime | None = None, target_date: 
     coords = active_stop.coordinates if active_stop and active_stop.coordinates else active.coordinates if active and active.coordinates else day.coordinates
     return {**temporal, "day":day.day_number, "primaryLocation":primary, "nextLocation":next_location,
         "activityType":active_stop.item_type if active_stop else active.activity_type if active else "free_time", "coordinates":coords,
-        "nextActivity":({"id":active_stop.id,"title":active_stop.name,"startTime":None,"location":active_stop.city,"address":active_stop.address} if active_stop else
+        "nextActivity":({"id":active_stop.id,"title":active_stop.name,"startTime":active_stop.start_time,"location":active_stop.city,"address":active_stop.address} if active_stop else
             {"id":active.id,"title":active.title,"startTime":active.start_time,"location":active.location,"address":active.address} if active else None),
         "nextRoute":None if not route else {"id":route.id,"origin":route.origin,"destination":route.destination,
             "originCoordinates":route.origin_coordinates,"destinationCoordinates":route.destination_coordinates}}

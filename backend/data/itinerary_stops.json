@@ -26,8 +26,8 @@
     {
       "date": "2026-08-23",
       "stops": [
-        {"name":"Escursione Etna","city":"Etna","start_time":"08:30","end_time":"15:00","sort_order":100},
-        {"name":"Trasferimento Etna -> Siracusa","city":"Etna","start_time":"16:00","end_time":"18:00","sort_order":200}
+      {"name":"Escursione Etna","city":"Etna","item_type":"etna","start_time":"08:30","end_time":"15:00","sort_order":100},
+      {"name":"Trasferimento Etna -> Siracusa","city":"Etna","start_time":"16:00","end_time":"18:00","sort_order":200}
       ]
     },
     {
