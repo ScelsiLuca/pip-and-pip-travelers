@@ -13,6 +13,21 @@ export type SavedPlace = {
   link?: string | null;
 };
 
+type RouteOption = {
+  available: boolean;
+  dataState: string;
+  durationMinutes: number | null;
+  distanceKm: number | null;
+  trafficDelayMinutes?: number | null;
+  updatedAt?: string | null;
+};
+
+type RouteOptions = {
+  car: RouteOption;
+  walk: RouteOption;
+  transit: RouteOption;
+};
+
 type PlaceForm = {
   id?: number;
   name: string;
@@ -113,6 +128,31 @@ function mapsUrl(place: SavedPlace) {
   )}`;
 }
 
+function formatRouteDistance(value: number | null) {
+  if (value == null) return "—";
+
+  if (value < 1) {
+    return `${Math.round(value * 1000)} m`;
+  }
+
+  return `${value.toFixed(1).replace(".", ",")} km`;
+}
+
+function formatRouteDuration(value: number | null) {
+  if (value == null) return "—";
+
+  if (value < 60) {
+    return `${value} min`;
+  }
+
+  const hours = Math.floor(value / 60);
+  const minutes = value % 60;
+
+  return minutes
+    ? `${hours} h ${minutes} min`
+    : `${hours} h`;
+}
+
 function SavedPlacesSection({
   location,
   position,
@@ -129,6 +169,8 @@ function SavedPlacesSection({
   const [error, setError] = useState("");
 
   const [searchQuery, setSearchQuery] = useState("");
+  const [routeOptions, setRouteOptions] = useState<Record<number, RouteOptions>>({});
+  const [routesLoading, setRoutesLoading] = useState(false);
   const [suggestions, setSuggestions] = useState<PlaceSuggestion[]>([]);
   const [searching, setSearching] = useState(false);
   const [placeSelected, setPlaceSelected] = useState(false);
@@ -180,6 +222,77 @@ function SavedPlacesSection({
       active = false;
     };
   }, [location, position, food, refreshKey]);
+
+  useEffect(() => {
+  if (!places?.length || !position) {
+    setRouteOptions({});
+    return;
+  }
+
+  let active = true;
+
+  const loadRoutes = async () => {
+    setRoutesLoading(true);
+
+    try {
+      const entries = await Promise.all(
+        places.map(async (place) => {
+          if (
+            place.latitude == null ||
+            place.longitude == null
+          ) {
+            return [place.id, null] as const;
+          }
+
+          try {
+            const result = await api<RouteOptions>(
+              "/api/routes/options",
+              {
+                method: "POST",
+                body: JSON.stringify({
+                  origin: {
+                    lat: position.lat,
+                    lon: position.lon,
+                  },
+                  destination: {
+                    lat: place.latitude,
+                    lon: place.longitude,
+                  },
+                }),
+              },
+            );
+
+            return [place.id, result] as const;
+          } catch {
+            return [place.id, null] as const;
+          }
+        }),
+      );
+
+      if (!active) return;
+
+      const next: Record<number, RouteOptions> = {};
+
+      for (const [id, result] of entries) {
+        if (result) {
+          next[id] = result;
+        }
+      }
+
+      setRouteOptions(next);
+    } finally {
+      if (active) {
+        setRoutesLoading(false);
+      }
+    }
+  };
+
+  void loadRoutes();
+
+  return () => {
+    active = false;
+  };
+}, [places, position?.lat, position?.lon]);
 
   useEffect(() => {
     if (
@@ -583,70 +696,153 @@ function SavedPlacesSection({
         <div className="saved-list">
           <div className="saved-list-columns">
             <span>Location</span>
-            <span>Distanza</span>
+            <span>Percorso</span>
           </div>
 
           {places.map((place) => {
-            const distance =
-              placeDistance(place, position);
-
+            const options = routeOptions[place.id];
             const url = mapsUrl(place);
 
-            return (
-              <div
-                className="saved-list-row"
-                key={place.id}
-              >
-                <div className="saved-list-location">
-                  <a
-                    href={url}
-                    target="_blank"
-                    rel="noreferrer"
-                  >
-                    {place.name}
-                  </a>
+return (
+  <div
+    className="saved-list-row"
+    key={place.id}
+  >
+    <div className="saved-list-location">
+      <a
+        href={url}
+        target="_blank"
+        rel="noreferrer"
+      >
+        {place.name}
+      </a>
 
-                  {place.address && (
-                    <small>
-                      {place.address}
-                    </small>
-                  )}
+      {place.address && (
+        <small>
+          {place.address}
+        </small>
+      )}
 
-                  <div className="saved-row-actions">
-                    <button
-                      type="button"
-                      onClick={() =>
-                        startEdit(place)
-                      }
-                    >
-                      Modifica
-                    </button>
+      <div className="saved-row-actions">
+        <button
+          type="button"
+          onClick={() =>
+            startEdit(place)
+          }
+        >
+          Modifica
+        </button>
 
-                    <button
-                      type="button"
-                      onClick={() =>
-                        deletePlace(place)
-                      }
-                    >
-                      Elimina
-                    </button>
-                  </div>
-                </div>
+        <button
+          type="button"
+          onClick={() =>
+            deletePlace(place)
+          }
+        >
+          Elimina
+        </button>
+      </div>
+    </div>
 
-                <a
-                  className="saved-distance"
-                  href={url}
-                  target="_blank"
-                  rel="noreferrer"
-                >
-                  {distance != null
-                    ? formatDistance(distance)
-                    : "Naviga"}
+    <a
+      className="saved-distance"
+      href={url}
+      target="_blank"
+      rel="noreferrer"
+      aria-label={`Apri ${place.name} in Google Maps`}
+    >
+      →
+    </a>
 
-                  <span>→</span>
-                </a>
-              </div>
-            );
+    <div className="saved-route-options">
+      {routesLoading && !options ? (
+        <small className="route-options-loading">
+          Calcolo percorsi…
+        </small>
+      ) : options ? (
+        <>
+          <div className="saved-route-mode">
+            <span className="route-mode-icon">
+              🚗
+            </span>
+
+            <div>
+              <small>AUTO</small>
+
+              <strong>
+                {formatRouteDuration(
+                  options.car.durationMinutes,
+                )}
+              </strong>
+
+              <span>
+                {formatRouteDistance(
+                  options.car.distanceKm,
+                )}
+              </span>
+            </div>
+          </div>
+
+          <div className="saved-route-mode">
+            <span className="route-mode-icon">
+              🚶
+            </span>
+
+            <div>
+              <small>A PIEDI</small>
+
+              <strong>
+                {formatRouteDuration(
+                  options.walk.durationMinutes,
+                )}
+              </strong>
+
+              <span>
+                {formatRouteDistance(
+                  options.walk.distanceKm,
+                )}
+              </span>
+            </div>
+          </div>
+
+          <div className="saved-route-mode">
+            <span className="route-mode-icon">
+              🚌
+            </span>
+
+            <div>
+              <small>MEZZI</small>
+
+              {options.transit.available ? (
+                <>
+                  <strong>
+                    {formatRouteDuration(
+                      options.transit.durationMinutes,
+                    )}
+                  </strong>
+
+                  <span>
+                    {formatRouteDistance(
+                      options.transit.distanceKm,
+                    )}
+                  </span>
+                </>
+              ) : (
+                <strong>
+                  Non disponibile
+                </strong>
+              )}
+            </div>
+          </div>
+        </>
+      ) : (
+        <small className="route-options-loading">
+          Percorsi non disponibili
+        </small>
+      )}
+    </div>
+  </div>
+);
           })}
         </div>
       )}

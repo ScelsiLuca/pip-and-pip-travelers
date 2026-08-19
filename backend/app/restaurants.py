@@ -6,6 +6,7 @@ import unicodedata
 from datetime import datetime
 from urllib.parse import urlencode
 import httpx
+from numpy import place
 from sqlalchemy.orm import Session
 from .config import settings
 from .services import ROME, cache_get, cache_put
@@ -144,7 +145,7 @@ async def google_place_details(place_id: str) -> dict | None:
 
     field_mask = (
         "id,displayName,formattedAddress,"
-        "location,googleMapsUri"
+        "addressComponents,location,googleMapsUri"
     )
 
     async with httpx.AsyncClient(timeout=10) as client:
@@ -163,11 +164,30 @@ async def google_place_details(place_id: str) -> dict | None:
 
     place = response.json()
     location = place.get("location") or {}
+    address_components = place.get("addressComponents") or []
+
+    city = None
+
+    for component in address_components:
+        types = component.get("types") or []
+
+        if "locality" in types:
+            city = component.get("longText")
+            break
+
+    if not city:
+        for component in address_components:
+            types = component.get("types") or []
+
+            if "administrative_area_level_3" in types:
+                city = component.get("longText")
+                break
 
     return {
         "placeId": place.get("id"),
         "name": (place.get("displayName") or {}).get("text"),
         "address": place.get("formattedAddress"),
+        "city": city,
         "latitude": location.get("latitude"),
         "longitude": location.get("longitude"),
         "googleMapsUrl": place.get("googleMapsUri"),

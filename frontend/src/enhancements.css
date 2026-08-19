@@ -1007,3 +1007,351 @@ nav{left:50%;right:auto;bottom:calc(12px + env(safe-area-inset-bottom));transfor
     font-size: 16px !important;
   }
 }
+
+/* =========================================================
+   Trip stop editor - Google Places
+   ========================================================= */
+
+.trip-place-search {
+  position: relative;
+}
+
+.trip-place-search input {
+  width: 100%;
+}
+
+.modern-editor input:focus,
+.modern-editor textarea:focus,
+.modern-editor select:focus {
+  outline: none;
+  box-shadow: none;
+}
+
+.modern-editor input:focus-visible,
+.modern-editor textarea:focus-visible,
+.modern-editor select:focus-visible {
+  outline: none;
+  box-shadow: none;
+}
+
+.modern-editor input[readonly] {
+  background: rgba(0, 0, 0, 0.035);
+  color: var(--pip-brown);
+}
+
+.trip-place-search .google-place-suggestions {
+  margin-top: 8px;
+}
+
+.trip-place-search .google-place-selected {
+  margin-top: 8px;
+}
+
+.modern-editor input[readonly] {
+  cursor: default;
+  caret-color: transparent;
+  user-select: none;
+}
+
+.modern-editor input[readonly]:focus,
+.modern-editor input[readonly]:focus-visible {
+  outline: none;
+  box-shadow: none;
+  cursor: default;
+}
+
+/* =========================================================
+   Route editor - Google Places + live route preview
+   ========================================================= */
+
+.route-editor {
+  display: grid;
+  gap: 16px;
+}
+
+.route-place-search {
+  position: relative;
+}
+
+.route-place-search input {
+  width: 100%;
+}
+
+.route-calculation-card {
+  display: grid;
+  gap: 6px;
+  padding: 14px 16px;
+  border-radius: 14px;
+  background: rgba(0, 0, 0, 0.035);
+}
+
+.route-calculation-card small {
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  font-weight: 700;
+  opacity: 0.65;
+}
+
+.route-calculation-card strong {
+  font-size: 18px;
+  line-height: 1.2;
+}
+
+.route-calculation-card span {
+  font-size: 13px;
+  opacity: 0.68;
+}
+
+.route-calculating {
+  font-size: 14px;
+  opacity: 0.72;
+}
+
+.route-editor input:focus,
+.route-editor textarea:focus,
+.route-editor select:focus,
+.route-editor input:focus-visible,
+.route-editor textarea:focus-visible,
+.route-editor select:focus-visible {
+  outline: none;
+  box-shadow: none;
+}
+
+/* Timeline actions: Google Maps + drag handle */
+.stop-row-actions,
+.route-row-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-left: auto;
+}
+
+.timeline-map-link {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  border-radius: 999px;
+  text-decoration: none;
+  font-size: 20px;
+  line-height: 1;
+  font-weight: 700;
+  color: inherit;
+  background: rgba(0, 0, 0, 0.045);
+  flex: 0 0 auto;
+}
+
+.timeline-map-link:hover {
+  background: rgba(0, 0, 0, 0.08);
+}
+
+.timeline-map-link:focus,
+.timeline-map-link:focus-visible {
+  outline: none;
+  box-shadow: none;
+}
+
+/* Live transfer information */
+.route-live-info {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  margin: 4px 0 0;
+}
+
+.route-live-info strong {
+  font-size: 14px;
+  line-height: 1.3;
+}
+
+.route-live-info small {
+  font-size: 11px;
+  opacity: 0.62;
+}
+
+/* Transfer right-side actions */
+.route-row-actions {
+  align-self: center;
+}
+
+.route-row-actions .timeline-controls {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+/* Keep stop content flexible */
+.editable-stop .stop-content {
+  min-width: 0;
+  flex: 1;
+}
+
+/* Mobile */
+@media (max-width: 640px) {
+  .timeline-map-link {
+    width: 32px;
+    height: 32px;
+    font-size: 19px;
+  }
+
+  .stop-row-actions,
+  .route-row-actions {
+    gap: 5px;
+  }
+
+  .route-live-info strong {
+    font-size: 13px;
+  }
+}
+
+/* Saved places - layout route information */
+.saved-list-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 36px;
+  column-gap: 12px;
+  row-gap: 10px;
+  align-items: start;
+}
+
+/*
+ * Il primo blocco della row contiene
+ * nome, indirizzo e azioni modifica/elimina.
+ */
+.saved-list-row > div:first-child {
+  grid-column: 1;
+  grid-row: 1;
+  min-width: 0;
+}
+
+/* Saved places - route layout */
+
+.saved-list-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 40px;
+  grid-template-areas:
+    "location maps"
+    "routes routes";
+
+  gap: 12px 14px;
+  align-items: start;
+
+  padding: 14px 0;
+}
+
+.saved-list-location {
+  grid-area: location;
+  min-width: 0;
+}
+
+.saved-distance {
+  grid-area: maps;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  width: 36px;
+  height: 36px;
+
+  justify-self: end;
+  align-self: center;
+
+  border-radius: 999px;
+
+  text-decoration: none;
+  font-size: 18px;
+}
+
+.saved-route-options {
+  grid-area: routes;
+
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+
+  gap: 8px;
+
+  width: 100%;
+  min-width: 0;
+}
+
+.saved-route-mode {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+
+  min-width: 0;
+
+  padding: 9px 10px;
+
+  border-radius: 12px;
+  background: rgba(0, 0, 0, 0.035);
+}
+
+.route-mode-icon {
+  flex: 0 0 auto;
+  font-size: 16px;
+}
+
+.saved-route-mode > div {
+  display: flex;
+  flex-direction: column;
+
+  min-width: 0;
+}
+
+.saved-route-mode small {
+  margin-bottom: 2px;
+
+  font-size: 8px;
+  line-height: 1;
+
+  letter-spacing: 0.08em;
+  font-weight: 700;
+
+  opacity: 0.55;
+}
+
+.saved-route-mode strong {
+  font-size: 12px;
+  line-height: 1.25;
+
+  white-space: nowrap;
+}
+
+.saved-route-mode > div > span {
+  margin-top: 1px;
+
+  font-size: 10px;
+  line-height: 1.2;
+
+  opacity: 0.62;
+
+  white-space: nowrap;
+}
+
+.route-options-loading {
+  grid-column: 1 / -1;
+
+  padding: 8px 0;
+
+  font-size: 11px;
+  opacity: 0.6;
+}
+
+.day-ribbon {
+  display: flex;
+  gap: 10px;
+
+  overflow-x: auto;
+  overflow-y: hidden;
+
+  scroll-behavior: smooth;
+  scrollbar-width: thin;
+
+  padding-bottom: 6px;
+}
+
+.day-ribbon > button {
+  flex: 0 0 auto;
+}

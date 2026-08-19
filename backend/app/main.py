@@ -144,6 +144,106 @@ def restore_stop(stop_id: int, db: Session = Depends(get_db)):
     if not stop:raise HTTPException(404,"Tappa non trovata")
     stop.archived=False;db.commit();return {"status":"ok"}
 
+@app.post("/api/routes/preview")
+async def preview_route(
+    payload: dict,
+    db: Session = Depends(get_db),
+):
+    origin = payload.get("origin")
+    destination = payload.get("destination")
+    mode = payload.get("mode", "car")
+
+    if not origin or not destination:
+        raise HTTPException(
+            400,
+            "Partenza e destinazione sono obbligatorie",
+        )
+
+    if mode not in {"car", "walk", "transit"}:
+        raise HTTPException(
+            400,
+            "Modalità di trasporto non supportata",
+        )
+
+    try:
+        return await google_route(
+            db,
+            origin,
+            destination,
+            traffic=mode == "car",
+            mode=mode,
+        )
+    except Exception as exc:
+        raise HTTPException(
+            502,
+            "Impossibile calcolare il percorso",
+        ) from exc
+
+
+@app.post("/api/routes/options")
+async def route_options(
+    payload: dict,
+    db: Session = Depends(get_db),
+):
+    origin = payload.get("origin")
+    destination = payload.get("destination")
+
+    if not origin or not destination:
+        raise HTTPException(
+            400,
+            "Partenza e destinazione sono obbligatorie",
+        )
+
+    async def calculate(mode: str):
+        result = await google_route(
+            db,
+            origin,
+            destination,
+            traffic=mode == "car",
+            mode=mode,
+        )
+
+        if result.get("dataState") in {
+            "ERROR",
+            "NOT_CONFIGURED",
+        }:
+            return {
+                "available": False,
+                "dataState": result.get("dataState"),
+                "durationMinutes": None,
+                "distanceKm": None,
+                "trafficDelayMinutes": None,
+                "updatedAt": result.get("updatedAt"),
+            }
+
+        return {
+            "available": True,
+            "dataState": result.get("dataState"),
+            "durationMinutes": result.get(
+                "durationMinutes"
+            ),
+            "distanceKm": result.get(
+                "distanceKm"
+            ),
+            "trafficDelayMinutes": (
+                result.get("trafficDelayMinutes")
+                if mode == "car"
+                else None
+            ),
+            "updatedAt": result.get(
+                "updatedAt"
+            ),
+        }
+
+    car = await calculate("car")
+    walk = await calculate("walk")
+    transit = await calculate("transit")
+
+    return {
+        "car": car,
+        "walk": walk,
+        "transit": transit,
+    }
 
 @app.post("/api/trip/{day_id}/routes",status_code=201)
 def add_route(day_id:int,payload:RouteIn,db:Session=Depends(get_db)):

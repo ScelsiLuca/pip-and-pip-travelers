@@ -1,5 +1,11 @@
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
-import type { ItineraryStop, Trip, TripDay, TripRoute } from "./types";
+import type {
+  ItineraryStop,
+  RouteLive,
+  Trip,
+  TripDay,
+  TripRoute,
+} from "./types";
 import { api } from "./api";
 import {
   guidesFromDays,
@@ -139,6 +145,16 @@ const maps = (
   mode === "dir"
     ? `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(destination(stop))}`
     : `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(destination(stop))}`;
+
+const routeMapsUrl = (route: TripRoute) => {
+  const routeDestination = route.destinationCoordinates
+    ? `${route.destinationCoordinates.lat},${route.destinationCoordinates.lon}`
+    : route.destinationAddress?.trim() || route.destination;
+
+  return `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(
+    routeDestination,
+  )}`;
+};
 function Editorial({ content }: { content: PoiGuideContent }) {
   return (
     <div className="poi-editorial">
@@ -310,11 +326,6 @@ const asTripStop = (stop: ItineraryStop): TripStop => {
     original: stop.original,
   };
 };
-type Candidate = {
-  displayName: string;
-  coordinates: { lat: number; lon: number };
-  type?: string;
-};
 type StopDraft = {
   id?: number;
   name: string;
@@ -325,6 +336,21 @@ type StopDraft = {
   startTime?: string;
   endTime?: string;
   coordinates: { lat: number; lon: number } | null;
+};
+
+type PlaceSuggestion = {
+  placeId: string;
+  text: string;
+};
+
+type GooglePlaceDetails = {
+  placeId: string;
+  name: string;
+  city?: string | null;
+  address?: string | null;
+  latitude?: number | null;
+  longitude?: number | null;
+  googleMapsUrl?: string | null;
 };
 
 function StopEditor({
@@ -340,202 +366,357 @@ function StopEditor({
   onClose: () => void;
   onSaved: () => void;
 }) {
-  const [value, setValue] = useState<StopDraft | null>(draft),
-    [initial, setInitial] = useState(""),
-    [candidates, setCandidates] = useState<Candidate[]>([]),
-    [chosen, setChosen] = useState<Candidate | null>(null),
-    [confirmed, setConfirmed] = useState(false),
-    [loading, setLoading] = useState(false),
-    [error, setError] = useState(""),
-    [discard, setDiscard] = useState(false);
+  const [value, setValue] = useState<StopDraft | null>(draft);
+  const [initial, setInitial] = useState("");
+  const [searchQuery, setSearchQuery] = useState("");
+  const [suggestions, setSuggestions] = useState<PlaceSuggestion[]>([]);
+  const [searching, setSearching] = useState(false);
+  const [placeSelected, setPlaceSelected] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState("");
+  const [discard, setDiscard] = useState(false);
+
   useEffect(() => {
     setValue(draft);
     setInitial(JSON.stringify(draft));
-    setCandidates([]);
-    setChosen(null);
-    setConfirmed(false);
+    setSearchQuery(draft?.name || "");
+    setSuggestions([]);
+    setPlaceSelected(!!draft?.coordinates);
     setError("");
   }, [draft]);
+
+  useEffect(() => {
+    if (
+      !value ||
+      placeSelected ||
+      searchQuery.trim().length < 2
+    ) {
+      setSuggestions([]);
+      return;
+    }
+
+    const timer = window.setTimeout(() => {
+      setSearching(true);
+
+      /*
+       * Qui NON usiamo il GPS fisico dell'utente come bias.
+       *
+       * Quando modifichiamo l'itinerario potremmo essere,
+       * ad esempio, a Roma mentre stiamo preparando una
+       * tappa in Sicilia.
+       */
+      api<PlaceSuggestion[]>("/api/places/autocomplete", {
+        method: "POST",
+        body: JSON.stringify({
+          input: searchQuery.trim(),
+          latitude: null,
+          longitude: null,
+        }),
+      })
+        .then(setSuggestions)
+        .catch(() => {
+          setSuggestions([]);
+          setError("Ricerca Google Places non disponibile.");
+        })
+        .finally(() => {
+          setSearching(false);
+        });
+    }, 250);
+
+    return () => window.clearTimeout(timer);
+  }, [searchQuery, value?.id, placeSelected]);
+
   if (!value) return null;
-  const dirty = JSON.stringify(value) !== initial || confirmed;
-  const close = () => (dirty ? setDiscard(true) : onClose());
-  const verify = async () => {
-    setLoading(true);
-    setError("");
+
+  const dirty =
+    JSON.stringify(value) !== initial ||
+    searchQuery !== (draft?.name || "");
+
+  const close = () =>
+    dirty ? setDiscard(true) : onClose();
+
+  const selectSuggestion = async (
+    suggestion: PlaceSuggestion,
+  ) => {
     try {
-      const result = await api<{ candidates: Candidate[] }>(
-        `/api/geocode/preview?q=${encodeURIComponent(value.address)}`,
+      setSearching(true);
+      setError("");
+
+      const place = await api<GooglePlaceDetails>(
+        `/api/places/${encodeURIComponent(
+          suggestion.placeId,
+        )}`,
       );
-      setCandidates(result.candidates);
-      if (!result.candidates.length)
-        setError(
-          "Posizione non verificata: puoi comunque salvare l’indirizzo.",
-        );
+
+      setValue((current) => {
+        if (!current) return current;
+
+        return {
+          ...current,
+          name: place.name || suggestion.text,
+          address: place.address || "",
+          city: place.city || current.city,
+          coordinates:
+            place.latitude != null &&
+            place.longitude != null
+              ? {
+                  lat: place.latitude,
+                  lon: place.longitude,
+                }
+              : null,
+        };
+      });
+
+      setSearchQuery(place.name || suggestion.text);
+      setPlaceSelected(true);
+      setSuggestions([]);
+      setError("");
     } catch {
       setError(
-        "Posizione non verificata: servizio momentaneamente non disponibile.",
+        "Impossibile recuperare i dettagli del luogo.",
       );
     } finally {
-      setLoading(false);
+      setSearching(false);
     }
   };
+
   const save = async () => {
-    setLoading(true);
-      const body: any = {
-      name: value.name,
-      city: value.city,
+    if (!value.name.trim()) {
+      setError(
+        "Seleziona prima una location da Google Maps.",
+      );
+      return;
+    }
+
+    setSaving(true);
+    setError("");
+
+    const body = {
+      name: value.name.trim(),
+      city: value.city.trim(),
       item_type: value.itemType,
-      address: value.address || null,
-      notes: value.notes || null,
-        start_time: (value as any).startTime || null,
-        end_time: (value as any).endTime || null,
-        ...(confirmed && chosen ? { coordinates: chosen.coordinates } : {}),
-      };
-      try {
-        if (value.id)
-          await api(`/api/stops/${value.id}`, {
-            method: "PATCH",
-            body: JSON.stringify(body),
-          });
-        else
-          await api(`/api/trip/${dayId}/stops`, {
-            method: "POST",
-            body: JSON.stringify(body),
-          });
-        onSaved();
-        onClose();
-      } catch {
-        setError("Salvataggio non riuscito. Riprova.");
-      } finally {
-        setLoading(false);
-      }
+      address: value.address.trim() || null,
+      notes: value.notes.trim() || null,
+      start_time: value.startTime || null,
+      end_time: value.endTime || null,
+      coordinates: value.coordinates,
     };
+
+    try {
+      if (value.id) {
+        await api(`/api/stops/${value.id}`, {
+          method: "PATCH",
+          body: JSON.stringify(body),
+        });
+      } else {
+        await api(`/api/trip/${dayId}/stops`, {
+          method: "POST",
+          body: JSON.stringify(body),
+        });
+      }
+
+      onSaved();
+      onClose();
+    } catch {
+      setError("Salvataggio non riuscito. Riprova.");
+    } finally {
+      setSaving(false);
+    }
+  };
+
   return (
     <>
       <BottomSheet
         open={open}
-        title={value.id ? "Modifica tappa" : "Aggiungi tappa"}
+        title={
+          value.id ? "Modifica tappa" : "Aggiungi tappa"
+        }
         onClose={close}
         expanded
       >
         <form
           className="modern-editor"
-          onSubmit={(e) => {
-            e.preventDefault();
+          onSubmit={(event) => {
+            event.preventDefault();
             void save();
           }}
         >
-          <label>
-            Nome
-            <input
-              required
-              value={value.name}
-              onChange={(e) => setValue({ ...value, name: e.target.value })}
-            />
-          </label>
-          <label>
-            Indirizzo
-            <input
-              value={value.address}
-              onChange={(e) => {
-                setValue({ ...value, address: e.target.value });
-                setCandidates([]);
-                setChosen(null);
-                setConfirmed(false);
-              }}
-              placeholder="Via, città, provincia, Italia"
-            />
-          </label>
-          <button
-            className="verify-map"
-            type="button"
-            disabled={loading || value.address.length < 3}
-            onClick={() => void verify()}
-          >
-            {loading ? "Verifica…" : "⌖ Verifica sulla mappa"}
-          </button>
-          {error && <p className="editor-warning">{error}</p>}
-          {candidates.length > 0 && (
-            <div className="geocode-candidates">
-              <small>
-                {candidates.length > 1
-                  ? "SCEGLI IL RISULTATO CORRETTO"
-                  : "RISULTATO TROVATO"}
-              </small>
-              {candidates.map((item) => (
-                <button
-                  type="button"
-                  className={chosen === item ? "selected" : ""}
-                  onClick={() => {
-                    setChosen(item);
-                    setConfirmed(false);
-                  }}
-                  key={`${item.coordinates.lat}-${item.coordinates.lon}`}
-                >
-                  <span>⌖</span>
-                  {item.displayName}
-                </button>
-              ))}
-              {chosen && !confirmed && (
-                <button
-                  className="confirm-position"
-                  type="button"
-                  onClick={() => setConfirmed(true)}
-                >
-                  Conferma questa posizione
-                </button>
-              )}
-              {confirmed && (
-                <p className="position-ok">
-                  ✓ Coordinate pronte per il salvataggio
-                </p>
-              )}
-            </div>
-          )}
-          <div className="editor-grid">
+          <div className="google-place-search trip-place-search">
             <label>
-              Città / area
+              {value.id
+                ? "Cerca una nuova location su Google Maps"
+                : "Cerca su Google Maps"}
+
               <input
-                required
-                value={value.city}
-                onChange={(e) => setValue({ ...value, city: e.target.value })}
+                value={searchQuery}
+                onChange={(event) => {
+                  const next = event.target.value;
+
+                  setSearchQuery(next);
+                  setPlaceSelected(false);
+                  setSuggestions([]);
+                  setError("");
+
+                  /*
+                   * Appena l'utente modifica la ricerca
+                   * invalidiamo la vecchia location.
+                   *
+                   * Manteniamo però città, tipo, orari
+                   * e note della tappa.
+                   */
+                  setValue((current) =>
+                    current
+                      ? {
+                          ...current,
+                          name: "",
+                          address: "",
+                          coordinates: null,
+                        }
+                      : current,
+                  );
+                }}
+                placeholder="Cerca luogo, spiaggia, museo..."
+                autoComplete="off"
               />
             </label>
+
+            {searching && (
+              <small className="muted">
+                Ricerca in corso…
+              </small>
+            )}
+
+            {suggestions.length > 0 && (
+              <div className="google-place-suggestions">
+                {suggestions.map((suggestion) => (
+                  <button
+                    key={suggestion.placeId}
+                    type="button"
+                    onClick={() =>
+                      void selectSuggestion(suggestion)
+                    }
+                  >
+                    <span>📍</span>
+
+                    <strong>{suggestion.text}</strong>
+                  </button>
+                ))}
+              </div>
+            )}
+
+            {placeSelected &&
+              value.coordinates && (
+                <div className="google-place-selected">
+                  ✓ Luogo selezionato da Google Maps
+                </div>
+              )}
+          </div>
+
+          <label>
+            Indirizzo
+
+            <input
+              value={value.address}
+              readOnly
+              aria-readonly="true"
+              placeholder="Seleziona prima una location"
+            />
+          </label>
+
+          <div className="editor-grid">
+           <label>
+               Città / area
+
+          <input
+    value={value.city}
+    readOnly
+    aria-readonly="true"
+    placeholder="Seleziona prima una location"
+  />
+</label>
+
             <label>
               Tipo
+
               <select
                 value={value.itemType}
-                onChange={(e) =>
-                  setValue({ ...value, itemType: e.target.value })
+                onChange={(event) =>
+                  setValue({
+                    ...value,
+                    itemType: event.target.value,
+                  })
                 }
               >
                 <option value="poi">POI</option>
-                <option value="experience">Esperienza</option>
+                <option value="experience">
+                  Esperienza
+                </option>
                 <option value="food">Food</option>
                 <option value="nature">Natura</option>
               </select>
             </label>
+
             <label>
               Ora inizio
-              <input type="time" value={(value as any).startTime||""} onChange={(e)=>setValue({...value, startTime: e.target.value})} />
+
+              <input
+                type="time"
+                value={value.startTime || ""}
+                onChange={(event) =>
+                  setValue({
+                    ...value,
+                    startTime: event.target.value,
+                  })
+                }
+              />
             </label>
+
             <label>
               Ora fine
-              <input type="time" value={(value as any).endTime||""} onChange={(e)=>setValue({...value, endTime: e.target.value})} />
+
+              <input
+                type="time"
+                value={value.endTime || ""}
+                onChange={(event) =>
+                  setValue({
+                    ...value,
+                    endTime: event.target.value,
+                  })
+                }
+              />
             </label>
           </div>
+
           <label>
             Note
+
             <textarea
               value={value.notes}
-              onChange={(e) => setValue({ ...value, notes: e.target.value })}
+              onChange={(event) =>
+                setValue({
+                  ...value,
+                  notes: event.target.value,
+                })
+              }
             />
           </label>
-          <button className="pip-primary save-editor" disabled={loading}>
-            Salva modifiche
+
+          {error && (
+            <p className="editor-warning">{error}</p>
+          )}
+
+          <button
+            className="pip-primary save-editor"
+            disabled={
+              saving ||
+              (!value.id && !placeSelected)
+            }
+          >
+            {saving ? "Salvataggio…" : "Salva modifiche"}
           </button>
         </form>
       </BottomSheet>
+
       <ConfirmDialog
         open={discard}
         title="Scartare le modifiche?"
@@ -550,16 +731,22 @@ function StopEditor({
     </>
   );
 }
-
 type RouteDraft = {
   id?: number;
+
   origin: string;
   originAddress: string;
+  originCoordinates: { lat: number; lon: number } | null;
+
   destination: string;
   destinationAddress: string;
+  destinationCoordinates: { lat: number; lon: number } | null;
+
   mode: string;
   plannedDurationMinutes: string;
+  distanceKm: string;
 };
+
 function RouteEditor({
   open,
   draft,
@@ -573,129 +760,687 @@ function RouteEditor({
   onClose: () => void;
   onSaved: () => void;
 }) {
-  const [value, setValue] = useState<RouteDraft | null>(draft),
-    [initial, setInitial] = useState(""),
-    [discard, setDiscard] = useState(false),
-    [error, setError] = useState("");
+  const [value, setValue] = useState<RouteDraft | null>(draft);
+  const [initial, setInitial] = useState("");
+
+  const [originQuery, setOriginQuery] = useState("");
+  const [destinationQuery, setDestinationQuery] = useState("");
+
+  const [originSuggestions, setOriginSuggestions] =
+    useState<PlaceSuggestion[]>([]);
+
+  const [destinationSuggestions, setDestinationSuggestions] =
+    useState<PlaceSuggestion[]>([]);
+
+  const [originSelected, setOriginSelected] = useState(false);
+  const [destinationSelected, setDestinationSelected] =
+    useState(false);
+
+  const [searchingOrigin, setSearchingOrigin] = useState(false);
+  const [searchingDestination, setSearchingDestination] =
+    useState(false);
+
+  const [calculatingRoute, setCalculatingRoute] = useState(false);
+
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState("");
+  const [discard, setDiscard] = useState(false);
+
   useEffect(() => {
     setValue(draft);
     setInitial(JSON.stringify(draft));
+
+    setOriginQuery(draft?.origin || "");
+    setDestinationQuery(draft?.destination || "");
+
+    setOriginSuggestions([]);
+    setDestinationSuggestions([]);
+
+    setOriginSelected(!!draft?.originCoordinates);
+    setDestinationSelected(!!draft?.destinationCoordinates);
+
     setError("");
   }, [draft]);
+
+  /*
+   * Google Places autocomplete - PARTENZA
+   */
+  useEffect(() => {
+    if (
+      !value ||
+      originSelected ||
+      originQuery.trim().length < 2
+    ) {
+      setOriginSuggestions([]);
+      return;
+    }
+
+    const timer = window.setTimeout(() => {
+      setSearchingOrigin(true);
+
+      api<PlaceSuggestion[]>("/api/places/autocomplete", {
+        method: "POST",
+        body: JSON.stringify({
+          input: originQuery.trim(),
+          latitude: null,
+          longitude: null,
+        }),
+      })
+        .then(setOriginSuggestions)
+        .catch(() => {
+          setOriginSuggestions([]);
+          setError("Ricerca della partenza non disponibile.");
+        })
+        .finally(() => {
+          setSearchingOrigin(false);
+        });
+    }, 250);
+
+    return () => window.clearTimeout(timer);
+  }, [originQuery, originSelected, value?.id]);
+
+  /*
+   * Google Places autocomplete - DESTINAZIONE
+   */
+  useEffect(() => {
+    if (
+      !value ||
+      destinationSelected ||
+      destinationQuery.trim().length < 2
+    ) {
+      setDestinationSuggestions([]);
+      return;
+    }
+
+    const timer = window.setTimeout(() => {
+      setSearchingDestination(true);
+
+      api<PlaceSuggestion[]>("/api/places/autocomplete", {
+        method: "POST",
+        body: JSON.stringify({
+          input: destinationQuery.trim(),
+          latitude: null,
+          longitude: null,
+        }),
+      })
+        .then(setDestinationSuggestions)
+        .catch(() => {
+          setDestinationSuggestions([]);
+          setError("Ricerca della destinazione non disponibile.");
+        })
+        .finally(() => {
+          setSearchingDestination(false);
+        });
+    }, 250);
+
+    return () => window.clearTimeout(timer);
+  }, [
+    destinationQuery,
+    destinationSelected,
+    value?.id,
+  ]);
+
+  /*
+   * Calcolo automatico del tragitto.
+   *
+   * Auto  -> Google Routes + traffico corrente.
+   * Walk  -> Google Routes pedonale.
+   */
+  useEffect(() => {
+    if (
+      !value?.originCoordinates ||
+      !value?.destinationCoordinates ||
+      !["car", "walk"].includes(value.mode)
+    ) {
+      return;
+    }
+
+    let active = true;
+
+    const timer = window.setTimeout(() => {
+      setCalculatingRoute(true);
+      setError("");
+
+      api<RouteLive>("/api/routes/preview", {
+        method: "POST",
+        body: JSON.stringify({
+          origin: value.originCoordinates,
+          destination: value.destinationCoordinates,
+          mode: value.mode,
+        }),
+      })
+        .then((result) => {
+          if (!active) return;
+
+          if (
+            result.dataState === "ERROR" ||
+            result.dataState === "NOT_CONFIGURED"
+          ) {
+            setError(
+              "Non è stato possibile calcolare il tragitto con Google Maps.",
+            );
+            return;
+          }
+
+          setValue((current) => {
+            if (!current) return current;
+
+            return {
+              ...current,
+              plannedDurationMinutes:
+                result.durationMinutes != null
+                  ? String(result.durationMinutes)
+                  : "",
+              distanceKm:
+                result.distanceKm != null
+                  ? String(result.distanceKm)
+                  : "",
+            };
+          });
+        })
+        .catch(() => {
+          if (active) {
+            setError(
+              "Non è stato possibile calcolare il tragitto con Google Maps.",
+            );
+          }
+        })
+        .finally(() => {
+          if (active) {
+            setCalculatingRoute(false);
+          }
+        });
+    }, 200);
+
+    return () => {
+      active = false;
+      window.clearTimeout(timer);
+    };
+  }, [
+    value?.originCoordinates?.lat,
+    value?.originCoordinates?.lon,
+    value?.destinationCoordinates?.lat,
+    value?.destinationCoordinates?.lon,
+    value?.mode,
+  ]);
+
   if (!value) return null;
+
+  const dirty = JSON.stringify(value) !== initial;
+
   const close = () =>
-    JSON.stringify(value) !== initial ? setDiscard(true) : onClose();
+    dirty ? setDiscard(true) : onClose();
+
+  const selectOrigin = async (
+    suggestion: PlaceSuggestion,
+  ) => {
+    try {
+      setSearchingOrigin(true);
+      setError("");
+
+      const place = await api<GooglePlaceDetails>(
+        `/api/places/${encodeURIComponent(
+          suggestion.placeId,
+        )}`,
+      );
+
+      setValue((current) => {
+        if (!current) return current;
+
+        return {
+          ...current,
+          origin: place.name || suggestion.text,
+          originAddress: place.address || "",
+          originCoordinates:
+            place.latitude != null &&
+            place.longitude != null
+              ? {
+                  lat: place.latitude,
+                  lon: place.longitude,
+                }
+              : null,
+
+          /*
+           * Invalidiamo il vecchio calcolo.
+           */
+          plannedDurationMinutes: "",
+          distanceKm: "",
+        };
+      });
+
+      setOriginQuery(place.name || suggestion.text);
+      setOriginSelected(true);
+      setOriginSuggestions([]);
+    } catch {
+      setError(
+        "Impossibile recuperare i dettagli della partenza.",
+      );
+    } finally {
+      setSearchingOrigin(false);
+    }
+  };
+
+  const selectDestination = async (
+    suggestion: PlaceSuggestion,
+  ) => {
+    try {
+      setSearchingDestination(true);
+      setError("");
+
+      const place = await api<GooglePlaceDetails>(
+        `/api/places/${encodeURIComponent(
+          suggestion.placeId,
+        )}`,
+      );
+
+      setValue((current) => {
+        if (!current) return current;
+
+        return {
+          ...current,
+          destination: place.name || suggestion.text,
+          destinationAddress: place.address || "",
+          destinationCoordinates:
+            place.latitude != null &&
+            place.longitude != null
+              ? {
+                  lat: place.latitude,
+                  lon: place.longitude,
+                }
+              : null,
+
+          plannedDurationMinutes: "",
+          distanceKm: "",
+        };
+      });
+
+      setDestinationQuery(place.name || suggestion.text);
+      setDestinationSelected(true);
+      setDestinationSuggestions([]);
+    } catch {
+      setError(
+        "Impossibile recuperare i dettagli della destinazione.",
+      );
+    } finally {
+      setSearchingDestination(false);
+    }
+  };
+
+  const formatDuration = (minutes: number) => {
+    if (minutes < 60) {
+      return `${minutes} min`;
+    }
+
+    const hours = Math.floor(minutes / 60);
+    const remaining = minutes % 60;
+
+    if (!remaining) {
+      return `${hours} h`;
+    }
+
+    return `${hours} h ${remaining} min`;
+  };
+
   const save = async () => {
+    if (
+      !value.originCoordinates ||
+      !value.destinationCoordinates
+    ) {
+      setError(
+        "Seleziona partenza e destinazione da Google Maps.",
+      );
+      return;
+    }
+
+    if (
+      ["car", "walk"].includes(value.mode) &&
+      !value.plannedDurationMinutes
+    ) {
+      setError(
+        "Attendi il calcolo del tragitto prima di salvare.",
+      );
+      return;
+    }
+
+    setSaving(true);
+    setError("");
+
     const body = {
       origin: value.origin,
-      origin_address: value.originAddress || null,
       destination: value.destination,
-      destination_address: value.destinationAddress || null,
+
+      /*
+       * Gli indirizzi non sono più mostrati
+       * all'utente, ma continuiamo a salvarli
+       * nel database.
+       */
+      origin_address: value.originAddress || null,
+      destination_address:
+        value.destinationAddress || null,
+
+      origin_coordinates: value.originCoordinates,
+      destination_coordinates:
+        value.destinationCoordinates,
+
       mode: value.mode,
-      planned_duration_minutes: value.plannedDurationMinutes
-        ? Number(value.plannedDurationMinutes)
-        : null,
+
+      planned_duration_minutes:
+        value.plannedDurationMinutes
+          ? Number(value.plannedDurationMinutes)
+          : null,
+
+      distance_km:
+        value.distanceKm
+          ? Number(value.distanceKm)
+          : null,
     };
+
     try {
-      if (value.id)
+      if (value.id) {
         await api(`/api/routes/item/${value.id}`, {
           method: "PATCH",
           body: JSON.stringify(body),
         });
-      else
+      } else {
         await api(`/api/trip/${dayId}/routes`, {
           method: "POST",
           body: JSON.stringify(body),
         });
+      }
+
       onSaved();
       onClose();
     } catch {
       setError("Salvataggio non riuscito.");
+    } finally {
+      setSaving(false);
     }
   };
+
+  const automaticMode =
+    value.mode === "car" || value.mode === "walk";
+
   return (
     <>
       <BottomSheet
         open={open}
-        title={value.id ? "Modifica trasferimento" : "Nuovo trasferimento"}
+        title={
+          value.id
+            ? "Modifica trasferimento"
+            : "Nuovo trasferimento"
+        }
         onClose={close}
         expanded
       >
         <form
-          className="modern-editor"
-          onSubmit={(e) => {
-            e.preventDefault();
+          className="modern-editor route-editor"
+          onSubmit={(event) => {
+            event.preventDefault();
             void save();
           }}
         >
-          <label>
-            Partenza
-            <input
-              required
-              value={value.origin}
-              onChange={(e) => setValue({ ...value, origin: e.target.value })}
-            />
-          </label>
-          <label>
-            Indirizzo partenza
-            <input
-              value={value.originAddress}
-              onChange={(e) =>
-                setValue({ ...value, originAddress: e.target.value })
-              }
-            />
-          </label>
-          <label>
-            Destinazione
-            <input
-              required
-              value={value.destination}
-              onChange={(e) =>
-                setValue({ ...value, destination: e.target.value })
-              }
-            />
-          </label>
-          <label>
-            Indirizzo destinazione
-            <input
-              value={value.destinationAddress}
-              onChange={(e) =>
-                setValue({ ...value, destinationAddress: e.target.value })
-              }
-            />
-          </label>
-          <div className="editor-grid">
+          {/* PARTENZA */}
+
+          <div className="google-place-search route-place-search">
             <label>
-              Tipo
-              <select
-                value={value.mode}
-                onChange={(e) => setValue({ ...value, mode: e.target.value })}
-              >
-                <option value="car">Auto</option>
-                <option value="walk">A piedi</option>
-                <option value="boat">Barca</option>
-                <option value="other">Altro</option>
-              </select>
+              Partenza
+
+              <input
+                value={originQuery}
+                onChange={(event) => {
+                  const next = event.target.value;
+
+                  setOriginQuery(next);
+                  setOriginSelected(false);
+                  setOriginSuggestions([]);
+                  setError("");
+
+                  setValue((current) =>
+                    current
+                      ? {
+                          ...current,
+                          origin: "",
+                          originAddress: "",
+                          originCoordinates: null,
+                          plannedDurationMinutes: "",
+                          distanceKm: "",
+                        }
+                      : current,
+                  );
+                }}
+                placeholder="Cerca luogo di partenza..."
+                autoComplete="off"
+              />
             </label>
+
+            {searchingOrigin && (
+              <small className="muted">
+                Ricerca in corso…
+              </small>
+            )}
+
+            {originSuggestions.length > 0 && (
+              <div className="google-place-suggestions">
+                {originSuggestions.map((suggestion) => (
+                  <button
+                    key={suggestion.placeId}
+                    type="button"
+                    onClick={() =>
+                      void selectOrigin(suggestion)
+                    }
+                  >
+                    <span>📍</span>
+                    <strong>{suggestion.text}</strong>
+                  </button>
+                ))}
+              </div>
+            )}
+
+            {originSelected &&
+              value.originCoordinates && (
+                <div className="google-place-selected">
+                  ✓ Partenza selezionata
+                </div>
+              )}
+          </div>
+
+          {/* DESTINAZIONE */}
+
+          <div className="google-place-search route-place-search">
+            <label>
+              Destinazione
+
+              <input
+                value={destinationQuery}
+                onChange={(event) => {
+                  const next = event.target.value;
+
+                  setDestinationQuery(next);
+                  setDestinationSelected(false);
+                  setDestinationSuggestions([]);
+                  setError("");
+
+                  setValue((current) =>
+                    current
+                      ? {
+                          ...current,
+                          destination: "",
+                          destinationAddress: "",
+                          destinationCoordinates: null,
+                          plannedDurationMinutes: "",
+                          distanceKm: "",
+                        }
+                      : current,
+                  );
+                }}
+                placeholder="Cerca destinazione..."
+                autoComplete="off"
+              />
+            </label>
+
+            {searchingDestination && (
+              <small className="muted">
+                Ricerca in corso…
+              </small>
+            )}
+
+            {destinationSuggestions.length > 0 && (
+              <div className="google-place-suggestions">
+                {destinationSuggestions.map(
+                  (suggestion) => (
+                    <button
+                      key={suggestion.placeId}
+                      type="button"
+                      onClick={() =>
+                        void selectDestination(
+                          suggestion,
+                        )
+                      }
+                    >
+                      <span>📍</span>
+                      <strong>
+                        {suggestion.text}
+                      </strong>
+                    </button>
+                  ),
+                )}
+              </div>
+            )}
+
+            {destinationSelected &&
+              value.destinationCoordinates && (
+                <div className="google-place-selected">
+                  ✓ Destinazione selezionata
+                </div>
+              )}
+          </div>
+
+          {/* MODALITÀ */}
+
+          <label>
+            Tipo
+
+            <select
+              value={value.mode}
+              onChange={(event) => {
+                const nextMode = event.target.value;
+
+                setValue({
+                  ...value,
+                  mode: nextMode,
+                  plannedDurationMinutes:
+                    ["car", "walk"].includes(nextMode)
+                      ? ""
+                      : value.plannedDurationMinutes,
+                  distanceKm:
+                    ["car", "walk"].includes(nextMode)
+                      ? ""
+                      : value.distanceKm,
+                });
+              }}
+            >
+              <option value="car">Auto</option>
+              <option value="walk">A piedi</option>
+              <option value="boat">Barca</option>
+              <option value="other">Altro</option>
+            </select>
+          </label>
+
+          {/* RISULTATO GOOGLE ROUTES */}
+
+          {automaticMode &&
+            value.originCoordinates &&
+            value.destinationCoordinates && (
+              <div className="route-calculation-card">
+                <small>TRAGITTO</small>
+
+                {calculatingRoute ? (
+                  <div className="route-calculating">
+                    Calcolo percorso con Google Maps…
+                  </div>
+                ) : value.plannedDurationMinutes ? (
+                  <>
+                    <strong>
+                      {formatDuration(
+                        Number(
+                          value.plannedDurationMinutes,
+                        ),
+                      )}
+
+                      {value.distanceKm && (
+                        <>
+                          {" "}
+                          ·{" "}
+                          {Number(
+                            value.distanceKm,
+                          )
+                            .toFixed(1)
+                            .replace(".", ",")}{" "}
+                          km
+                        </>
+                      )}
+                    </strong>
+
+                    <span>
+                      {value.mode === "car"
+                        ? "Durata calcolata con il traffico attuale"
+                        : "Percorso pedonale calcolato da Google Maps"}
+                    </span>
+                  </>
+                ) : (
+                  <span>
+                    Seleziona partenza e destinazione.
+                  </span>
+                )}
+              </div>
+            )}
+
+          {/* BARCA / ALTRO */}
+
+          {!automaticMode && (
             <label>
               Durata prevista
+
               <input
                 type="number"
                 min="1"
                 inputMode="numeric"
                 value={value.plannedDurationMinutes}
-                onChange={(e) =>
-                  setValue({ ...value, plannedDurationMinutes: e.target.value })
+                onChange={(event) =>
+                  setValue({
+                    ...value,
+                    plannedDurationMinutes:
+                      event.target.value,
+                    distanceKm: "",
+                  })
                 }
+                placeholder="Minuti"
               />
             </label>
-          </div>
-          {error && <p className="editor-warning">{error}</p>}
-          <button className="pip-primary save-editor">
-            Salva trasferimento
+          )}
+
+          {error && (
+            <p className="editor-warning">
+              {error}
+            </p>
+          )}
+
+          <button
+            className="pip-primary save-editor"
+            disabled={
+              saving ||
+              calculatingRoute ||
+              !originSelected ||
+              !destinationSelected
+            }
+          >
+            {saving
+              ? "Salvataggio…"
+              : "Salva trasferimento"}
           </button>
         </form>
       </BottomSheet>
+
       <ConfirmDialog
         open={discard}
         title="Scartare le modifiche?"
@@ -708,6 +1453,125 @@ function RouteEditor({
         danger
       />
     </>
+  );
+}
+function LiveRouteInfo({
+  route,
+}: {
+  route: TripRoute;
+}) {
+  const [live, setLive] = useState<RouteLive | null>(null);
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    if (
+      !route.originCoordinates ||
+      !route.destinationCoordinates ||
+      !["car", "walk"].includes(route.mode || "car")
+    ) {
+      setLive(null);
+      return;
+    }
+
+    let active = true;
+
+    const refresh = async () => {
+      try {
+        setLoading(true);
+
+        const result = await api<RouteLive>("/api/routes/preview", {
+          method: "POST",
+          body: JSON.stringify({
+            origin: route.originCoordinates,
+            destination: route.destinationCoordinates,
+            mode: route.mode || "car",
+          }),
+        });
+
+        if (
+          active &&
+          result.dataState !== "ERROR" &&
+          result.dataState !== "NOT_CONFIGURED"
+        ) {
+          setLive(result);
+        }
+      } catch {
+        // Manteniamo la stima salvata se l'aggiornamento live non è disponibile.
+      } finally {
+        if (active) {
+          setLoading(false);
+        }
+      }
+    };
+
+    void refresh();
+
+    const interval = window.setInterval(
+      () => void refresh(),
+      5 * 60 * 1000,
+    );
+
+    return () => {
+      active = false;
+      window.clearInterval(interval);
+    };
+  }, [
+    route.id,
+    route.mode,
+    route.originCoordinates?.lat,
+    route.originCoordinates?.lon,
+    route.destinationCoordinates?.lat,
+    route.destinationCoordinates?.lon,
+  ]);
+
+  const duration = live?.durationMinutes ?? route.plannedDurationMinutes;
+  const distance = live?.distanceKm ?? route.distanceKm;
+
+  const formatDuration = (minutes: number) => {
+    if (minutes < 60) return `${minutes} min`;
+
+    const hours = Math.floor(minutes / 60);
+    const remaining = minutes % 60;
+
+    return remaining ? `${hours} h ${remaining} min` : `${hours} h`;
+  };
+
+  if (duration == null && distance == null) {
+    return (
+      <div className="route-live-info">
+        <span>{loading ? "Calcolo del tragitto…" : "Durata da calcolare"}</span>
+      </div>
+    );
+  }
+
+  return (
+    <div className="route-live-info">
+      <strong>
+        {duration != null ? formatDuration(duration) : ""}
+
+        {distance != null && (
+          <>
+            {duration != null ? " · " : ""}
+            {distance.toFixed(1).replace(".", ",")} km
+          </>
+        )}
+      </strong>
+
+      {loading ? (
+        <small>Aggiornamento traffico…</small>
+      ) : live ? (
+        <small>
+          {route.mode === "car"
+            ? live.trafficDelayMinutes != null &&
+              live.trafficDelayMinutes > 0
+              ? `Traffico attuale · +${live.trafficDelayMinutes} min`
+              : "Traffico attuale"
+            : "Percorso pedonale aggiornato"}
+        </small>
+      ) : (
+        <small>Stima salvata</small>
+      )}
+    </div>
   );
 }
 
@@ -890,19 +1754,33 @@ function StopRow({
         )}
       </button>
 
-      {editMode && (
-        <button
-          type="button"
-          className="drag-handle"
-          aria-label={`Trascina ${stop.name} per riordinare`}
-          title="Trascina per riordinare"
-          {...dragHandleProps}
+      <div className="stop-row-actions">
+        <a
+          className="timeline-map-link"
+          href={maps(asTripStop(stop))}
+          target="_blank"
+          rel="noreferrer"
+          aria-label={`Naviga verso ${stop.name} con Google Maps`}
+          title="Apri in Google Maps"
+          onClick={(event) => event.stopPropagation()}
         >
-          <span />
-          <span />
-          <span />
-        </button>
-      )}
+          →
+        </a>
+
+        {editMode && (
+          <button
+            type="button"
+            className="drag-handle"
+            aria-label={`Trascina ${stop.name} per riordinare`}
+            title="Trascina per riordinare"
+            {...dragHandleProps}
+          >
+            <span />
+            <span />
+            <span />
+          </button>
+        )}
+      </div>
     </article>
   );
 }
@@ -1050,11 +1928,16 @@ export function ModernTripView({
                 setRouteDraft({
                   origin: "",
                   originAddress: "",
+                  originCoordinates: null,
+
                   destination: "",
                   destinationAddress: "",
+                  destinationCoordinates: null,
+
                   mode: "car",
                   plannedDurationMinutes: "",
-                })
+                  distanceKm: "",
+})
               }
             >
               + Trasferimento
@@ -1067,7 +1950,7 @@ export function ModernTripView({
         items={items}
         itemKey={(item) => `${item.kind}-${item.id}`}
         disabled={!editMode}
-        onReorder={(next) => void reorder(next)}
+        onReorder={reorder}
       >
         {(item, _index, { dragHandleProps }) => {
           if (item.kind === "route") {
@@ -1088,60 +1971,78 @@ export function ModernTripView({
                   <strong>
                     {route.origin} → {route.destination}
                   </strong>
-                  <p>
-                    {route.plannedDurationMinutes
-                      ? `${route.plannedDurationMinutes} min`
-                      : "Durata da calcolare"}
-                  </p>
-                  {route.destinationAddress && (
-                    <em>{route.destinationAddress}</em>
+                  <LiveRouteInfo route={route} />
+                </div>
+
+                <div className="route-row-actions">
+                  <a
+                    className="timeline-map-link"
+                    href={routeMapsUrl(route)}
+                    target="_blank"
+                    rel="noreferrer"
+                    aria-label={`Naviga verso ${route.destination} con Google Maps`}
+                    title="Apri in Google Maps"
+                  >
+                    →
+                  </a>
+
+                  {editMode && (
+                    <div className="timeline-controls">
+                      <button
+                        type="button"
+                        className="route-edit-button"
+                        aria-label="Modifica trasferimento"
+                        onClick={() =>
+                          setRouteDraft({
+                            id: route.id,
+
+                            origin: route.origin,
+                            originAddress: route.originAddress || "",
+                            originCoordinates:
+                              route.originCoordinates || null,
+
+                            destination: route.destination,
+                            destinationAddress:
+                              route.destinationAddress || "",
+                            destinationCoordinates:
+                              route.destinationCoordinates || null,
+
+                            mode: route.mode || "car",
+
+                            plannedDurationMinutes:
+                              route.plannedDurationMinutes?.toString() || "",
+
+                            distanceKm:
+                              route.distanceKm?.toString() || "",
+                          })
+                        }
+                      >
+                        ✎
+                      </button>
+
+                      <button
+                        type="button"
+                        className="route-delete-button"
+                        aria-label="Elimina trasferimento"
+                        onClick={() => setConfirmDelete(item)}
+                      >
+                        ×
+                      </button>
+
+                      <button
+                        type="button"
+                        className="drag-handle route-drag-handle"
+                        aria-label={`Trascina trasferimento da ${route.origin} a ${route.destination}`}
+                        title="Trascina per riordinare"
+                        {...dragHandleProps}
+                      >
+                        <span />
+                        <span />
+                        <span />
+                      </button>
+                    </div>
                   )}
                 </div>
-                {editMode && (
-                  <div className="timeline-controls">
-                    <button
-                      type="button"
-                      className="route-edit-button"
-                      aria-label="Modifica trasferimento"
-                      onClick={() =>
-                        setRouteDraft({
-                          id: route.id,
-                          origin: route.origin,
-                          originAddress: route.originAddress || "",
-                          destination: route.destination,
-                          destinationAddress:
-                            route.destinationAddress || "",
-                          mode: route.mode || "car",
-                          plannedDurationMinutes:
-                            route.plannedDurationMinutes?.toString() || "",
-                        })
-                      }
-                    >
-                      ✎
-                    </button>
-
-                    <button
-                      type="button"
-                      className="route-delete-button"
-                      aria-label="Elimina trasferimento"
-                      onClick={() => setConfirmDelete(item)}
-                    >
-                      ×
-                    </button>
-
-                    <button
-                      type="button"
-                      className="drag-handle route-drag-handle"
-                      aria-label={`Trascina trasferimento da ${route.origin} a ${route.destination}`}
-                      title="Trascina per riordinare"
-                      {...dragHandleProps}
-                    >
-                      <span />
-                      <span />
-                      <span />
-                    </button>
-                  </div>
-                )}
               </article>
             );
           }
