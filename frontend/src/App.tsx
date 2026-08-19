@@ -200,6 +200,27 @@ function Today({
   if(kind==='etna')relevantServices.push(['Etna',live?.etna]);
   if(kind==='sea'||kind==='boat_trip')relevantServices.push(['Mare',live?.sea]);
   const stop=day?nextStop(day):null;
+  const recommendationLocation = (() => {
+  if (!day) return primaryLocation.split(",")[0];
+
+  const stopCity = stop?.city?.trim();
+  const baseCity = day.baseCity?.trim();
+
+  if (stopCity) {
+    const normalized = stopCity.toLowerCase();
+
+    if (
+      normalized === "isola bella" ||
+      normalized.includes("taormina")
+    ) {
+      return "Taormina";
+    }
+
+    return stopCity;
+  }
+
+  return baseCity || primaryLocation.split(",")[0];
+})();
   return (
     <main>
       <header className="hero">
@@ -286,12 +307,12 @@ function Today({
         )}
         {day&&<article className="home-guide-card"><small>GUIDA LOCALE</small><h2>Scopri {primaryLocation.split(',')[0]}</h2><p>{day.stops?.length||day.pointsOfInterest.length} luoghi del tuo itinerario, disponibili anche offline.</p><button onClick={()=>onGuide(primaryLocation)}>Apri guida →</button></article>}
         {day&&<FoodRecommendations
-          location={primaryLocation.split(',')[0]}
+          location={recommendationLocation}
           position={mapPosition}
 />}
         {day&&<RestaurantCarousel location={primaryLocation.split(',')[0]} coordinates={day.coordinates}/>} 
         {day&&<OptionalStops
-          location={primaryLocation.split(',')[0]}
+          location={recommendationLocation}
           dayNumber={Number(context.dayNumber||0)}
           position={mapPosition}
 />}
