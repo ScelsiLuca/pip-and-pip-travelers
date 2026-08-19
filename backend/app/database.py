@@ -24,6 +24,11 @@ def migrate_schema() -> None:
             "mode":"VARCHAR(20) NOT NULL DEFAULT 'car'","sort_order":"INTEGER NOT NULL DEFAULT 0",
             "archived":"BOOLEAN NOT NULL DEFAULT 0",
         },
+        # add itinerary stop times safely
+        "itinerary_stops":{
+            "start_time":"VARCHAR(5)",
+            "end_time":"VARCHAR(5)"
+        }
     }
     with engine.begin() as connection:
         known=inspect(connection)

@@ -17,6 +17,7 @@ import{BottomSheet,GuideView,ModernTripView}from'./TravelExperience';
 import{RestaurantCarousel}from'./RestaurantCarousel';
 import{nextStop}from'./tripModel';
 import{platformService,type DevicePosition}from'./services/platformService';
+import{FoodRecommendations,OptionalStops}from'./SavedPlaces';
 
 const months = [
   "gennaio",
@@ -265,7 +266,9 @@ function Today({
           </div>
         )}
         {day&&<article className="home-guide-card"><small>GUIDA LOCALE</small><h2>Scopri {primaryLocation.split(',')[0]}</h2><p>{day.stops?.length||day.pointsOfInterest.length} luoghi del tuo itinerario, disponibili anche offline.</p><button onClick={()=>onGuide(primaryLocation)}>Apri guida →</button></article>}
+        {day&&<FoodRecommendations location={primaryLocation.split(',')[0]} />}
         {day&&<RestaurantCarousel location={primaryLocation.split(',')[0]} coordinates={day.coordinates}/>} 
+        {day&&<OptionalStops location={primaryLocation.split(',')[0]} dayNumber={Number(context.dayNumber||0)} />}
         {(kind === "sea" || kind === "boat_trip") && (
           <article className="card contextual-card marine-card" style={{ order: order.sea }}>
             <div className="card-head">
