@@ -3,10 +3,8 @@ import math
 import re
 import unicodedata
 from datetime import datetime
-
 import httpx
 from sqlalchemy.orm import Session
-
 from .config import settings
 from .services import ROME, cache_get, cache_put
 
