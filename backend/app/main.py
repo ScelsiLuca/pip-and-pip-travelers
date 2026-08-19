@@ -343,6 +343,38 @@ def saved(db: Session = Depends(get_db)): return db.scalars(select(SavedPlace).o
 def save_place(payload: SavedPlaceIn, db: Session = Depends(get_db)):
     place = SavedPlace(**payload.model_dump()); db.add(place); db.commit(); db.refresh(place); return {"id":place.id}
 
+@app.put("/api/saved/{place_id}")
+def update_saved_place(
+    place_id: int,
+    payload: SavedPlaceIn,
+    db: Session = Depends(get_db),
+):
+    place = db.get(SavedPlace, place_id)
+
+    if not place:
+        raise HTTPException(status_code=404, detail="Saved place not found")
+
+    for field, value in payload.model_dump().items():
+        setattr(place, field, value)
+
+    db.commit()
+    db.refresh(place)
+
+    return place
+
+
+@app.delete("/api/saved/{place_id}", status_code=204)
+def delete_saved_place(
+    place_id: int,
+    db: Session = Depends(get_db),
+):
+    place = db.get(SavedPlace, place_id)
+
+    if not place:
+        raise HTTPException(status_code=404, detail="Saved place not found")
+
+    db.delete(place)
+    db.commit()
 
 frontend = Path(__file__).parents[2] / "frontend" / "dist"
 if frontend.exists():
