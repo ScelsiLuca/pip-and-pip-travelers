@@ -3,7 +3,18 @@
     {
       "date": "2026-08-21",
       "stops": [
-        {"name":"Pescheria di Catania","city":"Catania","start_time":"09:00","end_time":"09:45","sort_order":100},
+        {
+  "name": "Pescheria di Catania",
+  "city": "Catania",
+  "address": "Piazza Alonzo di Benedetto, 95131 Catania CT",
+  "coordinates": {
+    "lat": 37.5018273,
+    "lon": 15.0870043
+  },
+  "start_time": "09:00",
+  "end_time": "09:45",
+  "sort_order": 100
+},
         {"name":"Piazza del Duomo + Fontana dell'Elefante","city":"Catania","start_time":"09:45","end_time":"10:15","sort_order":200},
         {"name":"Via Crociferi","city":"Catania","start_time":"10:20","end_time":"11:15","sort_order":300},
         {"name":"Piazza Università","city":"Catania","start_time":"11:25","end_time":"11:45","sort_order":400},
