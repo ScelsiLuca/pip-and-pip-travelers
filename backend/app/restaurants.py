@@ -11,6 +11,8 @@ from .config import settings
 from .services import ROME, cache_get, cache_put
 
 GOOGLE_URL="https://places.googleapis.com/v1/places:searchText"
+GOOGLE_AUTOCOMPLETE_URL="https://places.googleapis.com/v1/places:autocomplete"
+GOOGLE_PLACE_DETAILS_URL="https://places.googleapis.com/v1/places/{place_id}"
 TRIPADVISOR_SEARCH="https://api.content.tripadvisor.com/api/v1/location/search"
 TRIPADVISOR_DETAILS="https://api.content.tripadvisor.com/api/v1/location/{location_id}/details"
 RESTAURANT_TTL_MINUTES=10
@@ -82,6 +84,94 @@ async def google_places(city: str, lat: float | None=None, lon: float | None=Non
         response.raise_for_status()
         return [normalize_google(place,city) for place in response.json().get("places",[])]
 
+async def google_place_autocomplete(
+    text: str,
+    lat: float | None = None,
+    lon: float | None = None,
+) -> list[dict]:
+    if not settings.google_places_api_key:
+        return []
+
+    body = {
+        "input": text,
+        "languageCode": "it",
+        "includedRegionCodes": ["it"],
+    }
+
+    if lat is not None and lon is not None:
+        body["locationBias"] = {
+            "circle": {
+                "center": {
+                    "latitude": lat,
+                    "longitude": lon,
+                },
+                "radius": 30000.0,
+            }
+        }
+
+    async with httpx.AsyncClient(timeout=10) as client:
+        response = await client.post(
+            GOOGLE_AUTOCOMPLETE_URL,
+            json=body,
+            headers={
+                "X-Goog-Api-Key": settings.google_places_api_key,
+                "Content-Type": "application/json",
+            },
+        )
+        response.raise_for_status()
+
+    results = []
+
+    for suggestion in response.json().get("suggestions", []):
+        prediction = suggestion.get("placePrediction")
+
+        if not prediction:
+            continue
+
+        text_data = prediction.get("text") or {}
+
+        results.append({
+            "placeId": prediction.get("placeId"),
+            "text": text_data.get("text"),
+        })
+
+    return results
+
+
+async def google_place_details(place_id: str) -> dict | None:
+    if not settings.google_places_api_key:
+        return None
+
+    field_mask = (
+        "id,displayName,formattedAddress,"
+        "location,googleMapsUri"
+    )
+
+    async with httpx.AsyncClient(timeout=10) as client:
+        response = await client.get(
+            GOOGLE_PLACE_DETAILS_URL.format(place_id=place_id),
+            params={
+                "languageCode": "it",
+                "regionCode": "IT",
+            },
+            headers={
+                "X-Goog-Api-Key": settings.google_places_api_key,
+                "X-Goog-FieldMask": field_mask,
+            },
+        )
+        response.raise_for_status()
+
+    place = response.json()
+    location = place.get("location") or {}
+
+    return {
+        "placeId": place.get("id"),
+        "name": (place.get("displayName") or {}).get("text"),
+        "address": place.get("formattedAddress"),
+        "latitude": location.get("latitude"),
+        "longitude": location.get("longitude"),
+        "googleMapsUrl": place.get("googleMapsUri"),
+    }
 
 async def tripadvisor_candidate(item: dict) -> dict | None:
     if not settings.tripadvisor_api_key:return None

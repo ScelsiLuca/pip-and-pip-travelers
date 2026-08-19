@@ -60,6 +60,11 @@ class SavedPlaceIn(BaseModel):
     notes: str | None = None
     link: str | None = None
 
+class PlaceAutocompleteIn(BaseModel):
+    input: str = Field(min_length=2, max_length=200)
+    latitude: float | None = Field(default=None, ge=-90, le=90)
+    longitude: float | None = Field(default=None, ge=-180, le=180)
+
 
 class NavigationRequest(BaseModel):
     latitude: float | None = Field(default=None, ge=-90, le=90)

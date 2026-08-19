@@ -21,6 +21,21 @@ type PlaceForm = {
   latitude: string;
   longitude: string;
   notes: string;
+  link: string;
+};
+
+type PlaceSuggestion = {
+  placeId: string;
+  text: string;
+};
+
+type GooglePlaceDetails = {
+  placeId: string;
+  name: string;
+  address?: string | null;
+  latitude?: number | null;
+  longitude?: number | null;
+  googleMapsUrl?: string | null;
 };
 
 const EMPTY_FORM: PlaceForm = {
@@ -30,9 +45,13 @@ const EMPTY_FORM: PlaceForm = {
   latitude: "",
   longitude: "",
   notes: "",
+  link: "",
 };
 
-function distanceKm(from: Coordinates, to: { lat: number; lon: number }) {
+function distanceKm(
+  from: Coordinates,
+  to: { lat: number; lon: number }
+) {
   const earthRadiusKm = 6371;
   const toRad = (value: number) => (value * Math.PI) / 180;
 
@@ -81,6 +100,10 @@ function formatDistance(km: number) {
 }
 
 function mapsUrl(place: SavedPlace) {
+  if (place.link) {
+    return place.link;
+  }
+
   if (place.latitude != null && place.longitude != null) {
     return `https://www.google.com/maps/dir/?api=1&destination=${place.latitude},${place.longitude}`;
   }
@@ -104,6 +127,11 @@ function SavedPlacesSection({
   const [editing, setEditing] = useState<PlaceForm | null>(null);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
+
+  const [searchQuery, setSearchQuery] = useState("");
+  const [suggestions, setSuggestions] = useState<PlaceSuggestion[]>([]);
+  const [searching, setSearching] = useState(false);
+  const [placeSelected, setPlaceSelected] = useState(false);
 
   useEffect(() => {
     let active = true;
@@ -151,33 +179,134 @@ function SavedPlacesSection({
     };
   }, [location, position, food, refreshKey]);
 
+  useEffect(() => {
+    if (
+      !editing ||
+      editing.id ||
+      placeSelected ||
+      searchQuery.trim().length < 2
+    ) {
+      setSuggestions([]);
+      return;
+    }
+
+    const timer = window.setTimeout(() => {
+      setSearching(true);
+
+      api<PlaceSuggestion[]>("/api/places/autocomplete", {
+        method: "POST",
+        body: JSON.stringify({
+          input: searchQuery.trim(),
+          latitude: position?.lat ?? null,
+          longitude: position?.lon ?? null,
+        }),
+      })
+        .then(setSuggestions)
+        .catch(() => {
+          setSuggestions([]);
+          setError("Ricerca Google Places non disponibile.");
+        })
+        .finally(() => setSearching(false));
+    }, 250);
+
+    return () => window.clearTimeout(timer);
+  }, [
+    searchQuery,
+    editing?.id,
+    position?.lat,
+    position?.lon,
+    placeSelected,
+  ]);
+
+  const selectSuggestion = async (
+    suggestion: PlaceSuggestion
+  ) => {
+    try {
+      setSearching(true);
+      setError("");
+
+      const place = await api<GooglePlaceDetails>(
+        `/api/places/${encodeURIComponent(suggestion.placeId)}`
+      );
+
+      setEditing((current) => {
+        if (!current) return current;
+
+        return {
+          ...current,
+          name: place.name || suggestion.text,
+          address: place.address || location,
+          latitude:
+            place.latitude != null
+              ? String(place.latitude)
+              : "",
+          longitude:
+            place.longitude != null
+              ? String(place.longitude)
+              : "",
+          link: place.googleMapsUrl || "",
+        };
+      });
+
+      setPlaceSelected(true);
+      setSearchQuery(place.name || suggestion.text);
+      setSuggestions([]);
+      setError("");
+    } catch {
+      setError("Impossibile recuperare i dettagli del luogo.");
+    } finally {
+      setSearching(false);
+    }
+  };
+
   const startAdd = () => {
     setError("");
+    setSearchQuery("");
+    setSuggestions([]);
+    setPlaceSelected(false);
+
     setEditing({
       ...EMPTY_FORM,
       category: food ? "food" : "optional",
-      address: location,
+      address: "",
     });
   };
 
   const startEdit = (place: SavedPlace) => {
     setError("");
+    setSearchQuery("");
+    setSuggestions([]);
+    setPlaceSelected(true);
+
     setEditing({
       id: place.id,
       name: place.name,
       category: place.category,
       address: place.address || "",
       latitude:
-        place.latitude != null ? String(place.latitude) : "",
+        place.latitude != null
+          ? String(place.latitude)
+          : "",
       longitude:
-        place.longitude != null ? String(place.longitude) : "",
+        place.longitude != null
+          ? String(place.longitude)
+          : "",
       notes: place.notes || "",
+      link: place.link || "",
     });
+  };
+
+  const closeEditor = () => {
+    setEditing(null);
+    setSearchQuery("");
+    setSuggestions([]);
+    setPlaceSelected(false);
+    setError("");
   };
 
   const savePlace = async () => {
     if (!editing || !editing.name.trim()) {
-      setError("Inserisci il nome della location.");
+      setError("Seleziona prima una location da Google Maps.");
       return;
     }
 
@@ -186,7 +315,10 @@ function SavedPlacesSection({
 
     const payload = {
       name: editing.name.trim(),
-      category: food ? "food" : editing.category || "optional",
+      category:
+        food
+          ? "food"
+          : editing.category || "optional",
       address: editing.address.trim() || null,
       latitude:
         editing.latitude.trim() === ""
@@ -197,7 +329,7 @@ function SavedPlacesSection({
           ? null
           : Number(editing.longitude),
       notes: editing.notes.trim() || null,
-      link: null,
+      link: editing.link.trim() || null,
     };
 
     if (
@@ -231,7 +363,7 @@ function SavedPlacesSection({
         });
       }
 
-      setEditing(null);
+      closeEditor();
       setRefreshKey((value) => value + 1);
     } catch {
       setError("Impossibile salvare la location.");
@@ -271,12 +403,16 @@ function SavedPlacesSection({
   return (
     <article
       className={`card saved-list-card ${
-        food ? "restaurants-card" : "optional-stops-card"
+        food
+          ? "restaurants-card"
+          : "optional-stops-card"
       }`}
     >
       <div className="saved-list-header">
         <div>
-          <small>{food ? "🍴" : "📍"} {title}</small>
+          <small>
+            {food ? "🍴" : "📍"} {title}
+          </small>
           <h2>{subtitle}</h2>
         </div>
 
@@ -300,74 +436,99 @@ function SavedPlacesSection({
                 : "Aggiungi tappa"}
           </h3>
 
-          <label>
-            Nome
-            <input
-              value={editing.name}
-              onChange={(event) =>
-                setEditing({
-                  ...editing,
-                  name: event.target.value,
-                })
-              }
-              placeholder="Nome della location"
-            />
-          </label>
+          {!editing.id && (
+            <div className="google-place-search">
+              <label>
+                Cerca su Google Maps
+
+                <input
+                  value={searchQuery}
+                  onChange={(event) => {
+                    setSearchQuery(event.target.value);
+                    setPlaceSelected(false);
+                    setError("");
+
+                    setEditing((current) =>
+                      current
+                        ? {
+                            ...current,
+                            name: "",
+                            address: "",
+                            latitude: "",
+                            longitude: "",
+                            link: "",
+                          }
+                        : current
+                    );
+                  }}
+                  placeholder={
+                    food
+                      ? "Cerca ristorante, bar, pasticceria..."
+                      : "Cerca luogo, spiaggia, museo..."
+                  }
+                  autoComplete="off"
+                />
+              </label>
+
+              {searching && (
+                <small className="muted">
+                  Ricerca in corso…
+                </small>
+              )}
+
+              {suggestions.length > 0 && (
+                <div className="google-place-suggestions">
+                  {suggestions.map((suggestion) => (
+                    <button
+                      key={suggestion.placeId}
+                      type="button"
+                      onClick={() =>
+                        selectSuggestion(suggestion)
+                      }
+                    >
+                      <span>📍</span>
+                      <strong>{suggestion.text}</strong>
+                    </button>
+                  ))}
+                </div>
+              )}
+
+              {placeSelected &&
+                editing.latitude &&
+                editing.longitude && (
+                  <div className="google-place-selected">
+                    ✓ Luogo selezionato da Google Maps
+                  </div>
+                )}
+            </div>
+          )}
+
+          {editing.id && (
+            <div className="google-place-selected">
+              ✓ Location salvata
+            </div>
+          )}
 
           <label>
             Indirizzo
             <input
               value={editing.address}
-              onChange={(event) =>
-                setEditing({
-                  ...editing,
-                  address: event.target.value,
-                })
-              }
-              placeholder="Indirizzo, città"
+              readOnly
+              aria-readonly="true"
+              placeholder="Seleziona prima una location"
             />
           </label>
 
-          <div className="saved-coordinate-grid">
-            <label>
-              Latitudine
-              <input
-                value={editing.latitude}
-                onChange={(event) =>
-                  setEditing({
-                    ...editing,
-                    latitude: event.target.value,
-                  })
-                }
-                inputMode="decimal"
-                placeholder="es. 37.8516"
-              />
-            </label>
-
-            <label>
-              Longitudine
-              <input
-                value={editing.longitude}
-                onChange={(event) =>
-                  setEditing({
-                    ...editing,
-                    longitude: event.target.value,
-                  })
-                }
-                inputMode="decimal"
-                placeholder="es. 15.2861"
-              />
-            </label>
-          </div>
-
           {error && (
-            <p className="saved-form-error">{error}</p>
+            <p className="saved-form-error">
+              {error}
+            </p>
           )}
 
           <div className="saved-editor-actions">
             <button
               type="button"
-              onClick={() => setEditing(null)}
+              onClick={closeEditor}
             >
               Annulla
             </button>
@@ -375,7 +536,10 @@ function SavedPlacesSection({
             <button
               type="button"
               onClick={savePlace}
-              disabled={saving}
+              disabled={
+                saving ||
+                (!editing.id && !placeSelected)
+              }
             >
               {saving ? "Salvataggio…" : "Salva"}
             </button>
@@ -384,7 +548,9 @@ function SavedPlacesSection({
       )}
 
       {!places && (
-        <p className="muted">Caricamento…</p>
+        <p className="muted">
+          Caricamento…
+        </p>
       )}
 
       {places && places.length === 0 && (
@@ -395,7 +561,10 @@ function SavedPlacesSection({
               : "Nessuna tappa facoltativa per questa area."}
           </p>
 
-          <button type="button" onClick={startAdd}>
+          <button
+            type="button"
+            onClick={startAdd}
+          >
             + Aggiungi
           </button>
         </div>
@@ -409,11 +578,16 @@ function SavedPlacesSection({
           </div>
 
           {places.map((place) => {
-            const distance = placeDistance(place, position);
+            const distance =
+              placeDistance(place, position);
+
             const url = mapsUrl(place);
 
             return (
-              <div className="saved-list-row" key={place.id}>
+              <div
+                className="saved-list-row"
+                key={place.id}
+              >
                 <div className="saved-list-location">
                   <a
                     href={url}
@@ -424,20 +598,26 @@ function SavedPlacesSection({
                   </a>
 
                   {place.address && (
-                    <small>{place.address}</small>
+                    <small>
+                      {place.address}
+                    </small>
                   )}
 
                   <div className="saved-row-actions">
                     <button
                       type="button"
-                      onClick={() => startEdit(place)}
+                      onClick={() =>
+                        startEdit(place)
+                      }
                     >
                       Modifica
                     </button>
 
                     <button
                       type="button"
-                      onClick={() => deletePlace(place)}
+                      onClick={() =>
+                        deletePlace(place)
+                      }
                     >
                       Elimina
                     </button>
@@ -453,6 +633,7 @@ function SavedPlacesSection({
                   {distance != null
                     ? formatDistance(distance)
                     : "Naviga"}
+
                   <span>→</span>
                 </a>
               </div>

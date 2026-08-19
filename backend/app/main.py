@@ -1,3 +1,4 @@
+import httpx
 from contextlib import asynccontextmanager
 from datetime import date, datetime, time, timedelta
 from pathlib import Path
@@ -12,11 +13,15 @@ from .config import settings
 from .database import Base, SessionLocal, engine, get_db, migrate_schema
 from .models import Activity, ChecklistItem, ItineraryStop, Route, SavedPlace, TripDay
 from .schemas import (ActivityIn, ActivityPatch, NavigationRequest, ReorderRequest, RouteIn,
-    RoutePatch, SavedPlaceIn, StopIn, StopPatch)
+    RoutePatch, SavedPlaceIn, StopIn, StopPatch, PlaceAutocompleteIn)
 from .services import (ROME, current_trip_context, get_next_activity, get_next_trip_leg, google_destination, google_maps_url,
     geocode_preview, leave_now, navigation_origin, prioritize_alerts, sea, seed_database, serialize_day,
     stop_destination, next_itinerary_stop, reverse_geocode, trip_context, weather, weather_alerts)
-from .restaurants import recommended_restaurants
+from .restaurants import (
+    google_place_autocomplete,
+    google_place_details,
+    recommended_restaurants,
+)
 from .providers import etna_latest, google_route, osrm_route, tomtom_route
 
 
@@ -333,7 +338,38 @@ async def dashboard_today(target_date: date | None = Query(None, alias="date"), 
     result["alertCoverageState"]="FULL" if active and all(v in {"LIVE","CACHE"} for v in active.values()) else "PARTIAL"
     
     return result
+@app.post("/api/places/autocomplete")
+async def place_autocomplete(payload: PlaceAutocompleteIn):
+    try:
+        return await google_place_autocomplete(
+            payload.input,
+            payload.latitude,
+            payload.longitude,
+        )
+    except httpx.HTTPError:
+        raise HTTPException(
+            status_code=502,
+            detail="Google Places autocomplete unavailable",
+        )
 
+
+@app.get("/api/places/{place_id}")
+async def place_details(place_id: str):
+    try:
+        place = await google_place_details(place_id)
+    except httpx.HTTPError:
+        raise HTTPException(
+            status_code=502,
+            detail="Google Place details unavailable",
+        )
+
+    if not place:
+        raise HTTPException(
+            status_code=404,
+            detail="Place not found",
+        )
+
+    return place
 
 @app.get("/api/saved")
 def saved(db: Session = Depends(get_db)): return db.scalars(select(SavedPlace).order_by(SavedPlace.name)).all()
@@ -352,7 +388,10 @@ def update_saved_place(
     place = db.get(SavedPlace, place_id)
 
     if not place:
-        raise HTTPException(status_code=404, detail="Saved place not found")
+        raise HTTPException(
+            status_code=404,
+            detail="Saved place not found",
+        )
 
     for field, value in payload.model_dump().items():
         setattr(place, field, value)
@@ -371,10 +410,15 @@ def delete_saved_place(
     place = db.get(SavedPlace, place_id)
 
     if not place:
-        raise HTTPException(status_code=404, detail="Saved place not found")
+        raise HTTPException(
+            status_code=404,
+            detail="Saved place not found",
+        )
 
     db.delete(place)
     db.commit()
+
+
 
 frontend = Path(__file__).parents[2] / "frontend" / "dist"
 if frontend.exists():

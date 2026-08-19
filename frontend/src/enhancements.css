@@ -241,3 +241,208 @@ nav{left:50%;right:auto;bottom:calc(12px + env(safe-area-inset-bottom));transfor
     gap: 10px;
   }
 }
+
+.google-place-search {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.google-place-search label {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.google-place-suggestions {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
+}
+
+.google-place-suggestions button {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 12px;
+  border: 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.04);
+  text-align: left;
+  cursor: pointer;
+}
+
+.google-place-suggestions button:last-child {
+  border-bottom: 0;
+}
+
+.google-place-suggestions button:hover {
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.google-place-suggestions span {
+  flex: 0 0 auto;
+}
+
+.google-place-suggestions strong {
+  font-size: 14px;
+}
+
+/* Google Places picker */
+
+.google-place-search {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.google-place-search input,
+.saved-place-editor input {
+  width: 100%;
+  box-sizing: border-box;
+  border: 1px solid rgba(88, 61, 45, 0.16);
+  border-radius: 12px;
+  padding: 12px 14px;
+  background: rgba(255, 250, 242, 0.92);
+  color: inherit;
+  font: inherit;
+  outline: none;
+  transition:
+    border-color 0.15s ease,
+    box-shadow 0.15s ease,
+    background 0.15s ease;
+}
+
+.google-place-search input:focus,
+.saved-place-editor input:focus {
+  border-color: rgba(196, 105, 67, 0.55);
+  box-shadow: 0 0 0 3px rgba(196, 105, 67, 0.10);
+  background: #fffaf3;
+}
+
+.google-place-suggestions {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-top: 2px;
+  border: 0;
+  border-radius: 14px;
+  overflow: visible;
+}
+
+.google-place-suggestions button {
+  display: grid;
+  grid-template-columns: 24px minmax(0, 1fr);
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 11px 12px;
+  border: 1px solid rgba(88, 61, 45, 0.08);
+  border-radius: 11px;
+  background: rgba(255, 255, 255, 0.55);
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition:
+    transform 0.12s ease,
+    background 0.12s ease,
+    border-color 0.12s ease;
+}
+
+.google-place-suggestions button:hover {
+  background: rgba(255, 255, 255, 0.9);
+  border-color: rgba(196, 105, 67, 0.22);
+  transform: translateY(-1px);
+}
+
+.google-place-suggestions button:active {
+  transform: scale(0.99);
+}
+
+.google-place-suggestions strong {
+  min-width: 0;
+  font-size: 14px;
+  line-height: 1.35;
+}
+
+.saved-place-editor {
+  gap: 14px;
+  padding: 18px;
+  border-radius: 18px;
+  background: rgba(255, 250, 242, 0.68);
+  border: 1px solid rgba(88, 61, 45, 0.08);
+}
+
+.saved-place-editor label {
+  gap: 7px;
+  font-size: 12px;
+}
+
+.saved-editor-actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin-top: 4px;
+}
+
+.saved-editor-actions button {
+  min-height: 42px;
+  border-radius: 12px;
+  border: 0;
+  padding: 10px 14px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.saved-editor-actions button:first-child {
+  background: rgba(88, 61, 45, 0.08);
+}
+
+.saved-editor-actions button:last-child {
+  background: #c96f4b;
+  color: white;
+}
+
+.saved-coordinate-grid {
+  grid-template-columns: 1fr 1fr;
+}
+
+@media (max-width: 600px) {
+  .saved-place-editor {
+    padding: 14px;
+    border-radius: 16px;
+  }
+
+  .saved-coordinate-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .google-place-suggestions button {
+    padding: 12px 10px;
+  }
+
+  .saved-editor-actions {
+    grid-template-columns: 1fr;
+  }
+}
+
+.google-place-selected {
+  display: inline-flex;
+  align-items: center;
+  width: fit-content;
+  padding: 8px 10px;
+  border-radius: 999px;
+  background: rgba(88, 130, 90, 0.10);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.saved-place-editor input[readonly] {
+  opacity: 0.72;
+  cursor: default;
+}
