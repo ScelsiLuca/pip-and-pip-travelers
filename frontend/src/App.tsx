@@ -300,17 +300,15 @@ function Today({
   );
 
   const selectedSimulatedPosition =
-    simulatedPosition?.date === simulation.date
-      ? simulatedPosition.coordinates
-      : null;
+  simulatedPosition?.date === simulation.date
+    ? simulatedPosition.coordinates
+    : null;
 
-  const effectiveLivePosition = simulation.enabled
-    ? selectedSimulatedPosition || defaultSimulatedPosition
-    : realPosition;
+// La simulazione cambia solo la data.
+// La posizione utilizzata per dati live e percorsi resta sempre il GPS reale.
+  const effectiveLivePosition = realPosition;
 
-  const effectiveLiveReady = simulation.enabled
-    ? Boolean(effectiveLivePosition)
-    : gpsResolved;
+  const effectiveLiveReady = gpsResolved;
 
   useEffect(() => {
     if (!effectiveLiveReady) return;
@@ -335,7 +333,7 @@ function Today({
       );
       params.set(
         "live_source",
-        simulation.enabled ? "SIMULATION" : "GPS",
+        "GPS",
       );
     }
 
@@ -408,7 +406,6 @@ function Today({
   const stop = day ? nextStop(day) : null;
   const nextStopOrigin = realPosition;
   const discoveryStop = stop || (homeDay ? nextStop(homeDay) : null);
-
   const recommendationLocation = (() => {
     const stopCity = discoveryStop?.city?.trim();
     const baseCity = homeDay?.baseCity?.trim();

@@ -182,10 +182,11 @@ export default function LocationNavigation({
         <span>◎</span>
 
         {simulation.enabled
-          ? `SIMULAZIONE · ${new Date(
-              `${simulation.date}T12:00`,
-            ).getDate()} AGO`
-          : "POSIZIONE E SIMULAZIONE"}
+          ? `SIMULAZIONE · ${new Date(`${simulation.date}T12:00`).toLocaleDateString("it-IT", {
+          day: "numeric",
+          month: "short",
+        }).toUpperCase()}`
+      : "POSIZIONE E SIMULAZIONE"}
 
         <b>›</b>
       </button>
