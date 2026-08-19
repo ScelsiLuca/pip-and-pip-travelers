@@ -517,8 +517,8 @@ function SavedPlacesSection({
     : "Tappe Aggiuntive Facoltative";
 
   const subtitle = food
-    ? "Dove mangiare"
-    : "Luoghi consigliati";
+  ? "Cibi tipici"
+  : "Luoghi consigliati (Extra)";
 
   return (
     <article
@@ -761,79 +761,98 @@ return (
         </small>
       ) : options ? (
         <>
-          <div className="saved-route-mode">
-            <span className="route-mode-icon">
-              🚗
-            </span>
+          <a
+  className="saved-route-mode"
+  href={`https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(
+    place.latitude != null && place.longitude != null
+      ? `${place.latitude},${place.longitude}`
+      : `${place.name} ${place.address || ""}`,
+  )}&travelmode=driving`}
+  target="_blank"
+  rel="noreferrer"
+>
+  <span className="route-mode-icon">🚗</span>
 
-            <div>
-              <small>AUTO</small>
+  <div>
+    <small>AUTO</small>
 
-              <strong>
-                {formatRouteDuration(
-                  options.car.durationMinutes,
-                )}
-              </strong>
+    <strong>
+      {formatRouteDuration(
+        options.car.durationMinutes,
+      )}
+    </strong>
 
-              <span>
-                {formatRouteDistance(
-                  options.car.distanceKm,
-                )}
-              </span>
-            </div>
-          </div>
+    <span>
+      {formatRouteDistance(
+        options.car.distanceKm,
+      )}
+    </span>
+  </div>
+</a>
 
-          <div className="saved-route-mode">
-            <span className="route-mode-icon">
-              🚶
-            </span>
+          <a
+  className="saved-route-mode"
+  href={`https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(
+    place.latitude != null && place.longitude != null
+      ? `${place.latitude},${place.longitude}`
+      : `${place.name} ${place.address || ""}`,
+  )}&travelmode=walking`}
+  target="_blank"
+  rel="noreferrer"
+>
+  <span className="route-mode-icon">🚶</span>
 
-            <div>
-              <small>A PIEDI</small>
+  <div>
+    <small>A PIEDI</small>
 
-              <strong>
-                {formatRouteDuration(
-                  options.walk.durationMinutes,
-                )}
-              </strong>
+    <strong>
+      {formatRouteDuration(
+        options.walk.durationMinutes,
+      )}
+    </strong>
 
-              <span>
-                {formatRouteDistance(
-                  options.walk.distanceKm,
-                )}
-              </span>
-            </div>
-          </div>
+    <span>
+      {formatRouteDistance(
+        options.walk.distanceKm,
+      )}
+    </span>
+  </div>
+</a>
 
-          <div className="saved-route-mode">
-            <span className="route-mode-icon">
-              🚌
-            </span>
+          <a
+  className="saved-route-mode"
+  href={`https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(
+    place.latitude != null && place.longitude != null
+      ? `${place.latitude},${place.longitude}`
+      : `${place.name} ${place.address || ""}`,
+  )}&travelmode=transit`}
+  target="_blank"
+  rel="noreferrer"
+>
+  <span className="route-mode-icon">🚌</span>
 
-            <div>
-              <small>MEZZI</small>
+  <div>
+    <small>MEZZI</small>
 
-              {options.transit.available ? (
-                <>
-                  <strong>
-                    {formatRouteDuration(
-                      options.transit.durationMinutes,
-                    )}
-                  </strong>
+    {options.transit.available ? (
+      <>
+        <strong>
+          {formatRouteDuration(
+            options.transit.durationMinutes,
+          )}
+        </strong>
 
-                  <span>
-                    {formatRouteDistance(
-                      options.transit.distanceKm,
-                    )}
-                  </span>
-                </>
-              ) : (
-                <strong>
-                  Non disponibile
-                </strong>
-              )}
-            </div>
-          </div>
+        <span>
+          {formatRouteDistance(
+            options.transit.distanceKm,
+          )}
+        </span>
+      </>
+    ) : (
+      <strong>Non disponibile</strong>
+    )}
+  </div>
+</a>
         </>
       ) : (
         <small className="route-options-loading">

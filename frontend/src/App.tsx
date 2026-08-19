@@ -129,6 +129,47 @@ type Dashboard = {
   alertCoverage:Record<string,string>;
   alertCoverageState:"FULL"|"PARTIAL";
 };
+
+type RouteOption = {
+  available: boolean;
+  dataState: string;
+  durationMinutes: number | null;
+  distanceKm: number | null;
+  trafficDelayMinutes?: number | null;
+  updatedAt?: string | null;
+};
+
+type RouteOptions = {
+  car: RouteOption;
+  walk: RouteOption;
+  transit: RouteOption;
+};
+
+function formatRouteDuration(value: number | null) {
+  if (value == null) return "—";
+
+  if (value < 60) {
+    return `${value} min`;
+  }
+
+  const hours = Math.floor(value / 60);
+  const minutes = value % 60;
+
+  return minutes
+    ? `${hours} h ${minutes} min`
+    : `${hours} h`;
+}
+
+function formatRouteDistance(value: number | null) {
+  if (value == null) return "—";
+
+  if (value < 1) {
+    return `${Math.round(value * 1000)} m`;
+  }
+
+  return `${value.toFixed(1).replace(".", ",")} km`;
+}
+
 function Today({
   trip,
   refreshToken,
@@ -138,89 +179,356 @@ function Today({
   trip: Trip;
   refreshToken: number;
   onRefresh: () => void;
-  onGuide:(name:string)=>void;
+  onGuide: (name: string) => void;
 }) {
-  const [live, setLive] = useState<Dashboard | null>(null),
-    [loading, setLoading] = useState(true);
+  const [live, setLive] = useState<Dashboard | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [nextStopRoutes, setNextStopRoutes] =
+  useState<RouteOptions | null>(null);
+  const [nextStopRoutesLoading, setNextStopRoutesLoading] =
+  useState(false);
   const [simulation, setSimulation] = useState({
     enabled: false,
     date: "2026-08-21",
   });
-  const[mapPosition,setMapPosition]=useState<Coordinates|null>(null);
-  const[realPosition,setRealPosition]=useState<DevicePosition|null>(null);
-  const[simulatedPosition,setSimulatedPosition]=useState<{date:string;coordinates:Coordinates}|null>(null);
-  const[gpsResolved,setGpsResolved]=useState(false);
-  const latestRealPosition=useRef<DevicePosition|null>(null);
-  const acceptRealPosition=(next:DevicePosition)=>{setGpsResolved(true);const previous=latestRealPosition.current;if(previous&&distanceKm(previous,next)<1)return;latestRealPosition.current=next;setLive(null);setLoading(true);setRealPosition(next);setMapPosition(next)};
-  useEffect(()=>{let active=true,watch:{remove:()=>Promise<void>}|null=null;const refresh=()=>platformService.currentPosition().then(position=>{if(active)acceptRealPosition(position)}).catch(()=>{if(active)setGpsResolved(true)});void refresh();platformService.watchPosition(position=>{if(active)acceptRealPosition(position)}).then(value=>{watch=value;if(!active)void value.remove()}).catch(()=>{});const foreground=()=>{const age=Date.now()-new Date(latestRealPosition.current?.updatedAt||0).getTime();if(document.visibilityState==='visible'&&age>120000)void refresh()};document.addEventListener('visibilitychange',foreground);return()=>{active=false;document.removeEventListener('visibilitychange',foreground);void watch?.remove()}},[]);
+
+  const [mapPosition, setMapPosition] = useState<Coordinates | null>(null);
+  const [realPosition, setRealPosition] = useState<DevicePosition | null>(null);
+  const [simulatedPosition, setSimulatedPosition] = useState<{
+    date: string;
+    coordinates: Coordinates;
+  } | null>(null);
+  const [gpsResolved, setGpsResolved] = useState(false);
+
+  const latestRealPosition = useRef<DevicePosition | null>(null);
+
+  const acceptRealPosition = (next: DevicePosition) => {
+    setGpsResolved(true);
+
+    const previous = latestRealPosition.current;
+    if (
+  previous &&
+  distanceKm(previous, next) < 0.25
+) {
+  return;
+}
+
+    latestRealPosition.current = next;
+    setLive(null);
+    setLoading(true);
+    setRealPosition(next);
+    setMapPosition(next);
+  };
+
+  useEffect(() => {
+    let active = true;
+    let watch: { remove: () => Promise<void> } | null = null;
+
+    const refresh = () =>
+      platformService
+        .currentPosition()
+        .then((position) => {
+          if (active) acceptRealPosition(position);
+        })
+        .catch(() => {
+          if (active) setGpsResolved(true);
+        });
+
+    void refresh();
+
+    platformService
+      .watchPosition((position) => {
+        if (active) acceptRealPosition(position);
+      })
+      .then((value) => {
+        watch = value;
+        if (!active) void value.remove();
+      })
+      .catch(() => {});
+
+    const foreground = () => {
+      const age =
+        Date.now() -
+        new Date(latestRealPosition.current?.updatedAt || 0).getTime();
+
+      if (
+        document.visibilityState === "visible" &&
+        age > 120000
+      ) {
+        void refresh();
+      }
+    };
+
+    document.addEventListener("visibilitychange", foreground);
+
+    return () => {
+      active = false;
+      document.removeEventListener("visibilitychange", foreground);
+      void watch?.remove();
+    };
+  }, []);
+
   const effectiveDate = simulation.enabled
     ? simulation.date
     : trip.context.today;
-  const simulatedDay=useMemo(()=>trip.days.find(item=>item.date===simulation.date)||null,[trip.days,simulation.date]);
-  const simulatedStop=simulatedDay?nextStop(simulatedDay):null;
-  const defaultSimulatedPosition=simulatedStop?.coordinates||simulatedDay?.coordinates||null;
-  const selectableSimulatedPositions=useMemo(()=>trip.days.flatMap(item=>[
-    item.coordinates,
-    ...item.routes.flatMap(route=>[route.originCoordinates,route.destinationCoordinates]),
-  ]).filter((position):position is Coordinates=>Boolean(position)),[trip.days]);
-  const selectedSimulatedPosition=simulatedPosition?.date===simulation.date?simulatedPosition.coordinates:null;
-  const effectiveLivePosition=simulation.enabled?(selectedSimulatedPosition||defaultSimulatedPosition):realPosition;
-  const effectiveLiveReady=simulation.enabled?Boolean(effectiveLivePosition):gpsResolved;
+
+  const simulatedDay = useMemo(
+    () =>
+      trip.days.find((item) => item.date === simulation.date) ||
+      null,
+    [trip.days, simulation.date],
+  );
+
+  const defaultSimulatedPosition =
+    simulatedDay?.coordinates || null;
+
+  const selectableSimulatedPositions = useMemo(
+    () =>
+      trip.days
+        .flatMap((item) => [
+          item.coordinates,
+          ...item.routes.flatMap((route) => [
+            route.originCoordinates,
+            route.destinationCoordinates,
+          ]),
+        ])
+        .filter(
+          (position): position is Coordinates =>
+            Boolean(position),
+        ),
+    [trip.days],
+  );
+
+  const selectedSimulatedPosition =
+    simulatedPosition?.date === simulation.date
+      ? simulatedPosition.coordinates
+      : null;
+
+  const effectiveLivePosition = simulation.enabled
+    ? selectedSimulatedPosition || defaultSimulatedPosition
+    : realPosition;
+
+  const effectiveLiveReady = simulation.enabled
+    ? Boolean(effectiveLivePosition)
+    : gpsResolved;
+
   useEffect(() => {
-    if(!effectiveLiveReady)return;
-    const controller=new AbortController();
+    if (!effectiveLiveReady) return;
+
+    const controller = new AbortController();
+
     setLive(null);
     setLoading(true);
-    const params=new URLSearchParams({date:effectiveDate});
-    if(effectiveLivePosition){params.set('latitude',String(effectiveLivePosition.lat));params.set('longitude',String(effectiveLivePosition.lon));params.set('live_source',simulation.enabled?'SIMULATION':'GPS')}
-    api<Dashboard>(`/api/dashboard/today?${params}`,{signal:controller.signal})
-      .then(value=>{if(!controller.signal.aborted)setLive(value)})
-      .catch(error=>{if((error as Error).name!=="AbortError")setLive(null)})
-      .finally(() => {if(!controller.signal.aborted)setLoading(false)});
-    return()=>controller.abort();
-  }, [refreshToken, effectiveDate, effectiveLiveReady, effectiveLivePosition?.lat, effectiveLivePosition?.lon, simulation.enabled]);
-  const day = live?.day,
-    context = live?.context || trip.context,
-    kind = day?.activityType || "city";
-  const order =
-    kind === "etna"
-      ? { etna: 1, weather: 2, alerts: 3, route: 5 }
-      : kind === "boat_trip" || kind === "sea"
-        ? { sea: 1, weather: 2, alerts: 4, route: 6 }
-        : kind === "road_trip"
-          ? { route: 1, weather: 4, alerts: 3, etna: 6 }
-          : { weather: 2, alerts: 4, route: 5, etna: 6 };
-  const dayNumber = Number(context.dayNumber || 0),
-    remainingDays = Number(context.remainingDays || 0),
-    phase = String(context.phase || "before"),
-    progress = dayNumber ? Math.round((dayNumber / 15) * 100) : 0;
-  const situation=travelStatus(live?.alerts||[],live?.alertCoverageState||'PARTIAL');
-  const primaryLocation=String((context as Record<string,unknown>).primaryLocation||day?.baseCity||day?.title||'Sicilia');
-  const relevantServices:Array<[string,LiveData|undefined]>=[['Meteo',live?.weather]];
-  if(kind==='etna')relevantServices.push(['Etna',live?.etna]);
-  if(kind==='sea'||kind==='boat_trip')relevantServices.push(['Mare',live?.sea]);
-  const stop=day?nextStop(day):null;
-  const recommendationLocation = (() => {
-  if (!day) return primaryLocation.split(",")[0];
 
-  const stopCity = stop?.city?.trim();
-  const baseCity = day.baseCity?.trim();
+    const params = new URLSearchParams({
+      date: effectiveDate,
+    });
 
-  if (stopCity) {
-    const normalized = stopCity.toLowerCase();
-
-    if (
-      normalized === "isola bella" ||
-      normalized.includes("taormina")
-    ) {
-      return "Taormina";
+    if (effectiveLivePosition) {
+      params.set(
+        "latitude",
+        String(effectiveLivePosition.lat),
+      );
+      params.set(
+        "longitude",
+        String(effectiveLivePosition.lon),
+      );
+      params.set(
+        "live_source",
+        simulation.enabled ? "SIMULATION" : "GPS",
+      );
     }
 
-    return stopCity;
+    api<Dashboard>(
+      `/api/dashboard/today?${params}`,
+      { signal: controller.signal },
+    )
+      .then((value) => {
+        if (!controller.signal.aborted) {
+          setLive(value);
+        }
+      })
+      .catch((error) => {
+        if ((error as Error).name !== "AbortError") {
+          setLive(null);
+        }
+      })
+      .finally(() => {
+        if (!controller.signal.aborted) {
+          setLoading(false);
+        }
+      });
+
+    return () => controller.abort();
+  }, [
+    refreshToken,
+    effectiveDate,
+    effectiveLiveReady,
+    effectiveLivePosition?.lat,
+    effectiveLivePosition?.lon,
+    simulation.enabled,
+  ]);
+
+  const day = live?.day;
+  const context = live?.context || trip.context;
+  const kind = day?.activityType || "city";
+
+  const dayNumber = Number(context.dayNumber || 0);
+  const remainingDays = Number(context.remainingDays || 0);
+  const phase = String(context.phase || "before");
+  const progress = dayNumber
+    ? Math.round((dayNumber / 15) * 100)
+    : 0;
+
+  const situation = travelStatus(
+    live?.alerts || [],
+    live?.alertCoverageState || "PARTIAL",
+  );
+
+  /*
+   * Quando il viaggio non è ancora iniziato (o non esiste
+   * una giornata live), la Home usa la prima giornata del
+   * viaggio come contesto di scoperta invece della posizione
+   * GPS reale dell'utente.
+   */
+  const fallbackDay =
+    trip.days.find((item) => item.date >= trip.context.today) ||
+    trip.days[0] ||
+    null;
+
+  const homeDay = day || fallbackDay;
+
+  const primaryLocation = String(
+    (context as Record<string, unknown>).primaryLocation ||
+      homeDay?.baseCity ||
+      homeDay?.title ||
+      "Sicilia",
+  );
+
+  const stop = day ? nextStop(day) : null;
+  const nextStopOrigin = realPosition;
+  const discoveryStop = stop || (homeDay ? nextStop(homeDay) : null);
+
+  const recommendationLocation = (() => {
+    const stopCity = discoveryStop?.city?.trim();
+    const baseCity = homeDay?.baseCity?.trim();
+
+    if (stopCity) {
+      const normalized = stopCity.toLowerCase();
+
+      if (
+        normalized === "isola bella" ||
+        normalized.includes("taormina")
+      ) {
+        return "Taormina";
+      }
+
+      return stopCity;
+    }
+
+    return baseCity || primaryLocation.split(",")[0];
+  })();
+
+  useEffect(() => {
+    if (!stop?.coordinates || !nextStopOrigin) {
+      setNextStopRoutes(null);
+      setNextStopRoutesLoading(false);
+      return;
+    }
+
+    const origin: Coordinates = {
+      lat: nextStopOrigin.lat,
+      lon: nextStopOrigin.lon,
+    };
+
+    const destination: Coordinates = {
+      lat: stop.coordinates.lat,
+      lon: stop.coordinates.lon,
+    };
+
+    let active = true;
+
+    const loadNextStopRoutes = async () => {
+      if (active) {
+        setNextStopRoutesLoading(true);
+      }
+
+      try {
+        const result = await api<RouteOptions>(
+          "/api/routes/options",
+          {
+            method: "POST",
+            body: JSON.stringify({
+              origin,
+              destination,
+            }),
+          },
+        );
+
+        if (active) {
+          setNextStopRoutes(result);
+        }
+      } catch (error) {
+        console.error(
+          "Errore calcolo percorso prossima tappa:",
+          error,
+        );
+
+        if (active) {
+          setNextStopRoutes(null);
+        }
+      } finally {
+        if (active) {
+          setNextStopRoutesLoading(false);
+        }
+      }
+    };
+
+    void loadNextStopRoutes();
+
+    const interval = window.setInterval(
+      () => void loadNextStopRoutes(),
+      5 * 60 * 1000,
+    );
+
+    return () => {
+      active = false;
+      window.clearInterval(interval);
+    };
+  }, [
+    stop?.id,
+    stop?.coordinates?.lat,
+    stop?.coordinates?.lon,
+    nextStopOrigin?.lat,
+    nextStopOrigin?.lon,
+    simulation.enabled,
+  ]);
+
+  /*
+   * In simulazione usiamo la posizione simulata.
+   * Durante il viaggio usiamo la posizione live.
+   * Prima del viaggio usiamo le coordinate della giornata
+   * di riferimento, evitando distanze Roma -> Sicilia.
+   */
+  const discoveryPosition: Coordinates | null =
+    simulation.enabled
+      ? effectiveLivePosition
+      : day
+        ? mapPosition || effectiveLivePosition
+        : homeDay?.coordinates || null;
+
+  const relevantServices: Array<
+    [string, LiveData | undefined]
+  > = [["Meteo", live?.weather]];
+
+  if (kind === "etna") {
+    relevantServices.push(["Etna", live?.etna]);
   }
 
-  return baseCity || primaryLocation.split(",")[0];
-})();
+  if (kind === "sea" || kind === "boat_trip") {
+    relevantServices.push(["Mare", live?.sea]);
+  }
+
   return (
     <main>
       <header className="hero">
@@ -233,27 +541,48 @@ function Today({
                 ? "IL VIAGGIO SI AVVICINA"
                 : "VIAGGIO CONCLUSO"}
           </p>
+
           <h1>Pip &amp; Pip Travelers</h1>
-          <p className="sub">Il nostro viaggio in Sicilia</p>
-          {dayNumber>0&&<p className="hero-location">{primaryLocation} · Sicilia</p>}
+          <p className="sub">
+            Il nostro viaggio in Sicilia
+          </p>
+
+          {dayNumber > 0 && (
+            <p className="hero-location">
+              {primaryLocation} · Sicilia
+            </p>
+          )}
+
           {dayNumber > 0 && (
             <div className="progress">
-              <span style={{ width: `${progress}%` }} />
+              <span
+                style={{
+                  width: `${progress}%`,
+                }}
+              />
               <small>
-                {progress}% temporale · {remainingDays} giorni rimanenti
+                {progress}% temporale · {remainingDays} giorni
+                rimanenti
               </small>
             </div>
           )}
         </div>
-        <button className="refresh" onClick={onRefresh} aria-label="Aggiorna">
+
+        <button
+          className="refresh"
+          onClick={onRefresh}
+          aria-label="Aggiorna"
+        >
           ↻
         </button>
       </header>
+
       {!navigator.onLine && (
         <div className="offline">
           OFFLINE · visualizzo gli ultimi dati disponibili
         </div>
       )}
+
       <section className="question">
         <span>Cosa devo sapere oggi?</span>
         <strong>
@@ -264,133 +593,524 @@ function Today({
               : "Il viaggio inizia il 21 agosto"}
         </strong>
       </section>
-      <div className="grid">
-        {loading&&<><div className="skeleton skeleton-wide"/><div className="skeleton"/><div className="skeleton"/></>}
-        <LocationNavigation
-          day={day || null}
-          days={trip.days}
-          simulation={simulation}
-          onSimulationChange={setSimulation}
-          onPositionChange={position=>{
-  if(!simulation.enabled){
-    setMapPosition(position);
-    return;
-  }
 
-  if(!position){
-    setSimulatedPosition(null);
-    return;
-  }
+      {loading && (
+        <div className="grid home-loading-grid">
+          <div className="skeleton skeleton-wide" />
+          <div className="skeleton" />
+          <div className="skeleton" />
+        </div>
+      )}
 
-  const isSimulatedSelection=selectableSimulatedPositions.some(
-    candidate =>
-      Math.abs(candidate.lat-position.lat)<.000001 &&
-      Math.abs(candidate.lon-position.lon)<.000001
-  );
-
-  if(isSimulatedSelection){
-    setSimulatedPosition({
-      date:simulation.date,
-      coordinates:position
-    });
-  }else{
-    setMapPosition(position);
-  }
-}}
-        />
-        {stop&&<article className="next-stop-feature"><div><small>PROSSIMA TAPPA</small><h2>{stop.name}</h2><p>{stop.city}</p></div><a href={`https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(mapsDestination(stop))}`} target="_blank" rel="noreferrer">Naviga →</a></article>}
-        <OperationalMap day={day||null} days={trip.days} currentPosition={simulation.enabled?effectiveLivePosition:mapPosition} nextLeg={live?.nextTripLeg||null} route={live?.routing||null} onPositionChange={setMapPosition}/>
-        {live && (
-          <div style={{ display: "contents", order: order.weather }}>
-            <Weather data={live.weather} location={live.weatherLocation} />
+      <div className="home-flow">
+        <section className="home-section home-section-now">
+          <div className="home-section-heading">
+            <small>ADESSO</small>
+            <h2>La prossima cosa da fare</h2>
           </div>
-        )}
-        {day&&<article className="home-guide-card"><small>GUIDA LOCALE</small><h2>Scopri {primaryLocation.split(',')[0]}</h2><p>{day.stops?.length||day.pointsOfInterest.length} luoghi del tuo itinerario, disponibili anche offline.</p><button onClick={()=>onGuide(primaryLocation)}>Apri guida →</button></article>}
-        {day&&<FoodRecommendations
-          location={recommendationLocation}
-          position={mapPosition}
-/>}
-        {day&&<RestaurantCarousel location={primaryLocation.split(',')[0]} coordinates={day.coordinates}/>} 
-        {day&&<OptionalStops
-          location={recommendationLocation}
-          dayNumber={Number(context.dayNumber||0)}
-          position={mapPosition}
-/>}
-        {(kind === "sea" || kind === "boat_trip") && (
-          <article className="card contextual-card marine-card" style={{ order: order.sea }}>
-            <div className="card-head">
-              <span>🌊 CONDIZIONI MARE</span>
-              <State data={live?.sea || { dataState: "UNAVAILABLE" }} />
-            </div>
-            <Empty
-              text={
-                live?.sea.message || "Apri il dettaglio per onde e temperatura"
-              }
+
+          <div className="home-now-grid">
+            <LocationNavigation
+              day={day || null}
+              days={trip.days}
+              simulation={simulation}
+              onSimulationChange={setSimulation}
+              showNextCard={false}
+              onPositionChange={(position) => {
+                if (!simulation.enabled) {
+                  setMapPosition(position);
+                  return;
+                }
+
+                if (!position) {
+                  setSimulatedPosition(null);
+                  return;
+                }
+
+                const isSimulatedSelection =
+                  selectableSimulatedPositions.some(
+                    (candidate) =>
+                      Math.abs(
+                        candidate.lat - position.lat,
+                      ) < 0.000001 &&
+                      Math.abs(
+                        candidate.lon - position.lon,
+                      ) < 0.000001,
+                  );
+
+                if (isSimulatedSelection) {
+                  setSimulatedPosition({
+                    date: simulation.date,
+                    coordinates: position,
+                  });
+                } else {
+                  setMapPosition(position);
+                }
+              }}
             />
-            <Fresh data={live?.sea || { dataState: "UNAVAILABLE" }} />
-          </article>
-        )}
-        <article className="card route-card" style={{ order: order.route }}>
-          <div className="card-head">
-            <span>🚗 PROSSIMA TRATTA</span>
-            <State data={live?.routing || { dataState: "UNAVAILABLE" }} />
-          </div>
-          {live?.nextTripLeg ? (
-            <>
-              <h2>
-                {live.nextTripLeg.origin} → {live.nextTripLeg.destination}
-              </h2>
-              <p>
-                {live?.routing.distanceKm
-                  ? `${live.routing.distanceKm} km · ${live.routing.durationMinutes} min`
-                  : "Stima del percorso non disponibile"}
-              </p>
-              <p>Partenza prevista: {live.nextTripLeg.plannedDeparture||'non configurata'}</p>
-              {live.nextTripLeg.googleMapsUrl&&<a className="maps-button" href={live.nextTripLeg.googleMapsUrl} target="_blank" rel="noreferrer">APRI IN GOOGLE MAPS</a>}
-              <p className="muted">{live?.traffic.dataState === "NOT_CONFIGURED"?"Tempo stimato senza traffico live":getUserFacingProviderStatus(live?.traffic.dataState,live?.traffic.updatedAt).label}</p>
-            </>
-          ) : (
-            <Empty text="Nessuna tratta pianificata" />
+
+            {stop && (
+  <article className="next-stop-feature">
+    <div className="next-stop-main">
+      <small>PROSSIMA TAPPA</small>
+
+      <h2>{stop.name}</h2>
+
+      <p>{stop.city}</p>
+
+      <div className="next-stop-route-options">
+        {nextStopRoutesLoading && !nextStopRoutes ? (
+          <small className="next-stop-route-loading">
+            Calcolo percorsi…
+          </small>
+        ) : nextStopRoutes ? (
+          <>
+            <a
+  className="next-stop-route-mode"
+  href={`https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(
+    mapsDestination(stop),
+  )}&travelmode=driving`}
+  target="_blank"
+  rel="noreferrer"
+>
+  <span>🚗</span>
+
+  <div>
+    <small>AUTO</small>
+    <strong>
+      {formatRouteDuration(
+        nextStopRoutes.car.durationMinutes,
+      )}
+    </strong>
+    <em>
+      {formatRouteDistance(
+        nextStopRoutes.car.distanceKm,
+      )}
+    </em>
+  </div>
+</a>
+
+            <a
+  className="next-stop-route-mode"
+  href={`https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(
+    mapsDestination(stop),
+  )}&travelmode=walking`}
+  target="_blank"
+  rel="noreferrer"
+>
+  <span>🚶</span>
+
+  <div>
+    <small>A PIEDI</small>
+    <strong>
+      {formatRouteDuration(
+        nextStopRoutes.walk.durationMinutes,
+      )}
+    </strong>
+    <em>
+      {formatRouteDistance(
+        nextStopRoutes.walk.distanceKm,
+      )}
+    </em>
+  </div>
+</a>
+
+            <a
+  className="next-stop-route-mode"
+  href={`https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(
+    mapsDestination(stop),
+  )}&travelmode=transit`}
+  target="_blank"
+  rel="noreferrer"
+>
+  <span>🚌</span>
+
+  <div>
+    <small>MEZZI</small>
+
+    {nextStopRoutes.transit.available ? (
+      <>
+        <strong>
+          {formatRouteDuration(
+            nextStopRoutes.transit.durationMinutes,
           )}
-        </article>
-        <article className="card travel-status-card" style={{ order: order.alerts }}>
-          <div className="card-head">
-            <span>🚨 SITUAZIONE VIAGGIO</span>
-            <span className={`state ${situation==='ATTENZIONE'?'warning':situation==='OK'?'ok':'check'}`}>{situation==='OK'?'Tutto ok':situation==='ATTENZIONE'?'Attenzione':'Da controllare'}</span>
+        </strong>
+
+        <em>
+          {formatRouteDistance(
+            nextStopRoutes.transit.distanceKm,
+          )}
+        </em>
+      </>
+    ) : (
+      <strong>—</strong>
+    )}
+  </div>
+</a>
+          </>
+        ) : (
+          <small className="next-stop-route-loading">
+            Percorso non disponibile
+          </small>
+        )}
+      </div>
+    </div>
+
+    <a
+      href={`https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(
+        mapsDestination(stop),
+      )}`}
+      target="_blank"
+      rel="noreferrer"
+    >
+      Naviga →
+    </a>
+  </article>
+)}
           </div>
-          {live?.alerts.length ? (
-            live.alerts.map((a, i) => (
-              <div className="alert-row" key={i}>
-                <strong>{a.title}</strong>
-                <p>{a.description}</p>
+        </section>
+
+        <section className="home-section home-section-mobility">
+          <div className="home-section-heading">
+            <small>MUOVERSI</small>
+            <h2>Mappa e prossima tratta</h2>
+          </div>
+
+          <div className="home-mobility-grid">
+            <OperationalMap
+              day={day || homeDay || null}
+              days={trip.days}
+              currentPosition={
+                simulation.enabled
+                  ? effectiveLivePosition
+                  : mapPosition
+              }
+              nextLeg={live?.nextTripLeg || null}
+              route={live?.routing || null}
+              onPositionChange={setMapPosition}
+            />
+
+            <article className="card route-card">
+              <div className="card-head">
+                <span>🚗 PROSSIMA TRATTA</span>
+                <State
+                  data={
+                    live?.routing || {
+                      dataState: "UNAVAILABLE",
+                    }
+                  }
+                />
               </div>
-            ))
-          ) : (
-            <div className="service-summary"><strong>{live?.alertCoverageState==='FULL'?'🟢 Tutto tranquillo':'🟡 Da controllare'}</strong><p>{live?.alertCoverageState==='PARTIAL'?'Alcuni servizi non sono ancora disponibili.':'Nessuna criticità rilevata dai servizi attivi.'}</p>{relevantServices.map(([name,data])=>{const s=getUserFacingProviderStatus(data?.dataState,data?.updatedAt);return <div className="service-row" key={name}><span>{name}</span><strong className={s.tone}>{s.label}</strong></div>})}<details><summary>Stato servizi</summary><p>Traffico · {getUserFacingProviderStatus(live?.traffic.dataState).label}</p><p>NEWS · {live?.newsLocation||"Posizione non disponibile"} · Non disponibili</p></details></div>
-          )}
-        </article>
-        {kind === "etna" && (
-          <article className="card contextual-card etna-card" style={{ order: order.etna }}>
-            <div className="card-head">
-              <span>🌋 ETNA LIVE</span>
-              <State data={live?.etna || { dataState: "UNAVAILABLE" }} />
-            </div>
-            {live?.etna.title ? (
-              <>
-                <h2>{live.etna.title}</h2>
-                <p>{live.etna.summary}</p>
-                {live.etna.sourceUrl && (
-                  <a href={live.etna.sourceUrl} target="_blank">
-                    Apri fonte INGV
-                  </a>
-                )}
-              </>
+
+              {live?.nextTripLeg ? (
+                <>
+                  <h2>
+                    {live.nextTripLeg.origin} →{" "}
+                    {live.nextTripLeg.destination}
+                  </h2>
+
+                  <p>
+                    {live.routing.distanceKm
+                      ? `${live.routing.distanceKm} km · ${live.routing.durationMinutes} min`
+                      : "Stima del percorso non disponibile"}
+                  </p>
+
+                  <p>
+                    Partenza prevista:{" "}
+                    {live.nextTripLeg.plannedDeparture ||
+                      "non configurata"}
+                  </p>
+
+                  {live.nextTripLeg.googleMapsUrl && (
+                    <a
+                      className="maps-button"
+                      href={live.nextTripLeg.googleMapsUrl}
+                      target="_blank"
+                      rel="noreferrer"
+                    >
+                      APRI IN GOOGLE MAPS
+                    </a>
+                  )}
+
+                  <p className="muted">
+                    {live.traffic.dataState ===
+                    "NOT_CONFIGURED"
+                      ? "Tempo stimato senza traffico live"
+                      : getUserFacingProviderStatus(
+                          live.traffic.dataState,
+                          live.traffic.updatedAt,
+                        ).label}
+                  </p>
+                </>
+              ) : (
+                <Empty text="Nessuna tratta pianificata" />
+              )}
+            </article>
+          </div>
+        </section>
+
+        <section className="home-section home-section-context">
+          <div className="home-section-heading">
+            <small>OGGI A {recommendationLocation.toUpperCase()}</small>
+            <h2>Informazioni utili</h2>
+          </div>
+
+          <div className="home-context-grid">
+            {live ? (
+              <Weather
+                data={live.weather}
+                location={live.weatherLocation}
+              />
             ) : (
-              <Empty text={live?.etna.message || "Dato INGV non disponibile"} />
+              <article className="card weather">
+                <div className="card-head">
+                  <span>
+                    METEO · {recommendationLocation}
+                  </span>
+                </div>
+                <Empty
+                  text={
+                    loading
+                      ? "Aggiornamento meteo…"
+                      : "Meteo non disponibile"
+                  }
+                />
+              </article>
             )}
-            <Fresh data={live?.etna || { dataState: "UNAVAILABLE" }} />
-          </article>
+
+            <article className="home-guide-card">
+              <small>GUIDA LOCALE</small>
+              <h2>Scopri {recommendationLocation}</h2>
+              <p>
+                {homeDay
+                  ? `${
+                      homeDay.stops?.length ||
+                      homeDay.pointsOfInterest.length
+                    } luoghi del tuo itinerario, disponibili anche offline.`
+                  : "Scopri i luoghi del viaggio, disponibili anche offline."}
+              </p>
+              <button
+                onClick={() =>
+                  onGuide(recommendationLocation)
+                }
+              >
+                Apri guida →
+              </button>
+            </article>
+          </div>
+        </section>
+
+        <section className="home-section home-section-discovery">
+          <div className="home-section-heading">
+            <small>SCOPRI NEI DINTORNI</small>
+            <h2>{recommendationLocation}</h2>
+          </div>
+
+          <div className="home-discovery-grid">
+            <FoodRecommendations
+              location={recommendationLocation}
+              position={discoveryPosition}
+            />
+
+            <OptionalStops
+              location={recommendationLocation}
+              dayNumber={Number(
+                context.dayNumber || homeDay?.dayNumber || 0,
+              )}
+              position={discoveryPosition}
+            />
+          </div>
+
+          <div className="home-restaurants-block">
+            <RestaurantCarousel
+              location={recommendationLocation}
+              coordinates={realPosition}
+/>
+          </div>
+        </section>
+
+        {(kind === "sea" || kind === "boat_trip") && (
+          <section className="home-section home-section-contextual">
+            <div className="home-section-heading">
+              <small>CONDIZIONI SPECIALI</small>
+              <h2>Informazioni per la giornata</h2>
+            </div>
+
+            <article className="card contextual-card marine-card">
+              <div className="card-head">
+                <span>🌊 CONDIZIONI MARE</span>
+                <State
+                  data={
+                    live?.sea || {
+                      dataState: "UNAVAILABLE",
+                    }
+                  }
+                />
+              </div>
+
+              <Empty
+                text={
+                  live?.sea.message ||
+                  "Apri il dettaglio per onde e temperatura"
+                }
+              />
+
+              <Fresh
+                data={
+                  live?.sea || {
+                    dataState: "UNAVAILABLE",
+                  }
+                }
+              />
+            </article>
+          </section>
         )}
+
+        {kind === "etna" && (
+          <section className="home-section home-section-contextual">
+            <div className="home-section-heading">
+              <small>CONDIZIONI SPECIALI</small>
+              <h2>Etna live</h2>
+            </div>
+
+            <article className="card contextual-card etna-card">
+              <div className="card-head">
+                <span>🌋 ETNA LIVE</span>
+                <State
+                  data={
+                    live?.etna || {
+                      dataState: "UNAVAILABLE",
+                    }
+                  }
+                />
+              </div>
+
+              {live?.etna.title ? (
+                <>
+                  <h2>{live.etna.title}</h2>
+                  <p>{live.etna.summary}</p>
+
+                  {live.etna.sourceUrl && (
+                    <a
+                      href={live.etna.sourceUrl}
+                      target="_blank"
+                      rel="noreferrer"
+                    >
+                      Apri fonte INGV
+                    </a>
+                  )}
+                </>
+              ) : (
+                <Empty
+                  text={
+                    live?.etna.message ||
+                    "Dato INGV non disponibile"
+                  }
+                />
+              )}
+
+              <Fresh
+                data={
+                  live?.etna || {
+                    dataState: "UNAVAILABLE",
+                  }
+                }
+              />
+            </article>
+          </section>
+        )}
+
+        <section className="home-section home-section-status">
+          <div className="home-section-heading">
+            <small>STATO DEL VIAGGIO</small>
+            <h2>Tutto sotto controllo</h2>
+          </div>
+
+          <article className="card travel-status-card">
+            <div className="card-head">
+              <span>🚨 SITUAZIONE VIAGGIO</span>
+              <span
+                className={`state ${
+                  situation === "ATTENZIONE"
+                    ? "warning"
+                    : situation === "OK"
+                      ? "ok"
+                      : "check"
+                }`}
+              >
+                {situation === "OK"
+                  ? "Tutto ok"
+                  : situation === "ATTENZIONE"
+                    ? "Attenzione"
+                    : "Da controllare"}
+              </span>
+            </div>
+
+            {live?.alerts.length ? (
+              live.alerts.map((alert, index) => (
+                <div
+                  className="alert-row"
+                  key={index}
+                >
+                  <strong>{alert.title}</strong>
+                  <p>{alert.description}</p>
+                </div>
+              ))
+            ) : (
+              <div className="service-summary">
+                <strong>
+                  {live?.alertCoverageState === "FULL"
+                    ? "🟢 Tutto tranquillo"
+                    : "🟡 Da controllare"}
+                </strong>
+
+                <p>
+                  {live?.alertCoverageState === "PARTIAL"
+                    ? "Alcuni servizi non sono ancora disponibili."
+                    : "Nessuna criticità rilevata dai servizi attivi."}
+                </p>
+
+                {relevantServices.map(([name, data]) => {
+                  const status =
+                    getUserFacingProviderStatus(
+                      data?.dataState,
+                      data?.updatedAt,
+                    );
+
+                  return (
+                    <div
+                      className="service-row"
+                      key={name}
+                    >
+                      <span>{name}</span>
+                      <strong className={status.tone}>
+                        {status.label}
+                      </strong>
+                    </div>
+                  );
+                })}
+
+                <details>
+                  <summary>Stato servizi</summary>
+                  <p>
+                    Traffico ·{" "}
+                    {
+                      getUserFacingProviderStatus(
+                        live?.traffic.dataState,
+                      ).label
+                    }
+                  </p>
+                  <p>
+                    NEWS ·{" "}
+                    {live?.newsLocation ||
+                      "Posizione non disponibile"}{" "}
+                    · Non disponibili
+                  </p>
+                </details>
+              </div>
+            )}
+          </article>
+        </section>
       </div>
     </main>
   );
