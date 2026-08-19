@@ -251,12 +251,31 @@ function Today({
           simulation={simulation}
           onSimulationChange={setSimulation}
           onPositionChange={position=>{
-            setMapPosition(position);
-            if(!simulation.enabled)return;
-            if(!position){setSimulatedPosition(null);return}
-            const isSimulatedSelection=selectableSimulatedPositions.some(candidate=>Math.abs(candidate.lat-position.lat)<.000001&&Math.abs(candidate.lon-position.lon)<.000001);
-            if(isSimulatedSelection)setSimulatedPosition({date:simulation.date,coordinates:position});
-          }}
+  if(!simulation.enabled){
+    setMapPosition(position);
+    return;
+  }
+
+  if(!position){
+    setSimulatedPosition(null);
+    return;
+  }
+
+  const isSimulatedSelection=selectableSimulatedPositions.some(
+    candidate =>
+      Math.abs(candidate.lat-position.lat)<.000001 &&
+      Math.abs(candidate.lon-position.lon)<.000001
+  );
+
+  if(isSimulatedSelection){
+    setSimulatedPosition({
+      date:simulation.date,
+      coordinates:position
+    });
+  }else{
+    setMapPosition(position);
+  }
+}}
         />
         {stop&&<article className="next-stop-feature"><div><small>PROSSIMA TAPPA</small><h2>{stop.name}</h2><p>{stop.city}</p></div><a href={`https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(mapsDestination(stop))}`} target="_blank" rel="noreferrer">Naviga →</a></article>}
         <OperationalMap day={day||null} days={trip.days} currentPosition={simulation.enabled?effectiveLivePosition:mapPosition} nextLeg={live?.nextTripLeg||null} route={live?.routing||null} onPositionChange={setMapPosition}/>
