@@ -720,7 +720,6 @@ function StopRow({
   onEdit,
   onStatus,
   onDelete,
-  onMove,
   dragHandleProps,
 }: {
   stop: ItineraryStop;
@@ -731,62 +730,178 @@ function StopRow({
   onEdit: () => void;
   onStatus: (status: StopStatus) => void;
   onDelete: () => void;
-  onMove: (direction: -1 | 1) => void;
   dragHandleProps: SortableRenderState["dragHandleProps"];
 }) {
-  const value = asTripStop(stop);
+  const menuRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!menu) return;
+
+    const closeIfOutside = (event: PointerEvent) => {
+      if (
+        menuRef.current &&
+        !menuRef.current.contains(event.target as Node)
+      ) {
+        onMenu();
+      }
+    };
+
+    window.addEventListener("pointerdown", closeIfOutside);
+
+    return () => {
+      window.removeEventListener("pointerdown", closeIfOutside);
+    };
+  }, [menu, onMenu]);
+
+  const statusText =
+    stop.status === "completed"
+      ? "Tappa visitata"
+      : stop.status === "skipped"
+        ? "Tappa saltata"
+        : "Tappa da visitare";
+
   return (
-    <article className={`editable-stop ${stop.status}`}>
+    <article
+      className={`editable-stop ${stop.status}${
+        menu ? " quick-menu-open" : ""
+      }`}
+    >
+      <div className="stop-status-wrap" ref={menuRef}>
+        <button
+          type="button"
+          className={`stop-status-button ${stop.status}`}
+          aria-label={`${statusText}: apri azioni per ${stop.name}`}
+          aria-haspopup="menu"
+          aria-expanded={menu}
+          onClick={(event) => {
+            event.stopPropagation();
+            onMenu();
+          }}
+        >
+          <span className="stop-status-core">
+            {stop.status === "completed"
+              ? "✓"
+              : stop.status === "skipped"
+                ? "↷"
+                : ""}
+          </span>
+        </button>
+
+        {menu && (
+          <div
+            className="stop-quick-menu"
+            role="menu"
+            aria-label={`Azioni per ${stop.name}`}
+          >
+            {stop.status !== "completed" && (
+              <button
+                type="button"
+                role="menuitem"
+                onClick={() => onStatus("done")}
+              >
+                <span className="quick-action-icon success">✓</span>
+                <span>
+                  <strong>Tappa visitata</strong>
+                  <small>Segna come completata</small>
+                </span>
+              </button>
+            )}
+
+            {stop.status !== "skipped" && (
+              <button
+                type="button"
+                role="menuitem"
+                onClick={() => onStatus("skipped")}
+              >
+                <span className="quick-action-icon">↷</span>
+                <span>
+                  <strong>Salta tappa</strong>
+                  <small>Continua con la successiva</small>
+                </span>
+              </button>
+            )}
+
+            {stop.status !== "planned" && (
+              <button
+                type="button"
+                role="menuitem"
+                onClick={() => onStatus("planned")}
+              >
+                <span className="quick-action-icon">○</span>
+                <span>
+                  <strong>Da visitare</strong>
+                  <small>Ripristina lo stato iniziale</small>
+                </span>
+              </button>
+            )}
+
+            <div className="stop-quick-divider" />
+
+            <button
+              type="button"
+              role="menuitem"
+              onClick={onEdit}
+            >
+              <span className="quick-action-icon">✎</span>
+              <span>
+                <strong>Modifica tappa</strong>
+                <small>Orario, luogo e dettagli</small>
+              </span>
+            </button>
+
+            {editMode && (
+              <button
+                type="button"
+                role="menuitem"
+                className="quick-danger"
+                onClick={onDelete}
+              >
+                <span className="quick-action-icon">×</span>
+                <span>
+                  <strong>Elimina tappa</strong>
+                  <small>Rimuovi dall'itinerario</small>
+                </span>
+              </button>
+            )}
+          </div>
+        )}
+      </div>
+
+      <time className="stop-time">
+        {stop.startTime || "—"}
+      </time>
+
+      <button
+        type="button"
+        className="stop-content"
+        onClick={onOpen}
+      >
+        <strong>{stop.name}</strong>
+
+        <small>
+          {stop.itemType === "experience"
+            ? "Esperienza"
+            : "Tappa"}{" "}
+          · {stop.city}
+        </small>
+
+        {stop.address && (
+          <em>{stop.address}</em>
+        )}
+      </button>
+
       {editMode && (
         <button
           type="button"
           className="drag-handle"
-          aria-label={`Trascina ${stop.name}`}
+          aria-label={`Trascina ${stop.name} per riordinare`}
+          title="Trascina per riordinare"
           {...dragHandleProps}
         >
-          ☰
+          <span />
+          <span />
+          <span />
         </button>
-      )}
-      <button className="stop-main" onClick={onOpen}>
-        <i />
-        <time className="stop-time">{stop.startTime?stop.startTime:'—'}</time>
-        <span>
-          <strong>{stop.name}</strong>
-          <small>
-            {stop.address ||
-              `${stop.itemType === "experience" ? "Esperienza" : "Tappa"} · ${stop.city}`}
-          </small>
-        </span>
-      </button>
-      <button
-        className="more-button"
-        aria-label={`Azioni per ${stop.name}`}
-        onClick={onMenu}
-      >
-        ⋯
-      </button>
-      {menu && (
-        <div className="context-menu">
-          <button onClick={onEdit}>Modifica</button>
-          <a href={maps(value, "search")} target="_blank" rel="noreferrer">
-            Mostra sulla mappa
-          </a>
-          <a href={maps(value)} target="_blank" rel="noreferrer">
-            Naviga
-          </a>
-          {stop.status !== "completed" && <button onClick={() => onStatus("done")}>Segna come visitato</button>}
-          {stop.status !== "planned" && <button onClick={() => onStatus("planned")}>Ripristina come da visitare</button>}
-          {stop.status !== "skipped" && <button onClick={() => onStatus("skipped")}>Segna come saltato</button>}
-          {editMode && (
-            <>
-              <button onClick={() => onMove(-1)}>Sposta su</button>
-              <button onClick={() => onMove(1)}>Sposta giù</button>
-              <button className="danger-text" onClick={onDelete}>
-                Elimina
-              </button>
-            </>
-          )}
-        </div>
       )}
     </article>
   );
@@ -831,16 +946,6 @@ export function ModernTripView({
     onChanged();
     flash("Nuovo ordine salvato");
   };
-  const move = (kind: "stop" | "route", id: number, direction: -1 | 1) => {
-    const index = items.findIndex(
-        (item) => item.kind === kind && item.id === id,
-      ),
-      target = index + direction;
-    if (index < 0 || target < 0 || target >= items.length) return;
-    const next = [...items];
-    [next[index], next[target]] = [next[target], next[index]];
-    void reorder(next);
-  };
   const status = async (stop: TripStop, value: StopStatus) => {
     if (stop.backendId)
       await api(`/api/stops/${stop.backendId}`, {
@@ -877,7 +982,6 @@ export function ModernTripView({
     onChanged();
     flash("Elemento ripristinato");
   };
-  let previousCity = "";
   return (
     <main className={`trip-modern ${editMode ? "edit-mode" : ""}`}>
       <header className="editorial-head trip-toolbar">
@@ -918,32 +1022,55 @@ export function ModernTripView({
       </header>
       {editMode && (
         <div className="edit-mode-banner">
-          <span>☰ Trascina oppure usa Sposta su/giù</span>
-          <button
-            onClick={() =>
-              setRouteDraft({
-                origin: "",
-                originAddress: "",
-                destination: "",
-                destinationAddress: "",
-                mode: "car",
-                plannedDurationMinutes: "",
-              })
-            }
-          >
-            + Trasferimento
-          </button>
+          <span>
+            Trascina le tre linee a destra di una riga per
+            cambiarne l'ordine.
+          </span>
+
+          <div className="edit-mode-actions">
+            <button
+              type="button"
+              onClick={() =>
+                setStopDraft({
+                  name: "",
+                  address: "",
+                  city: selected.baseCity || "",
+                  itemType: "poi",
+                  notes: "",
+                  coordinates: null,
+                })
+              }
+            >
+              + Tappa
+            </button>
+
+            <button
+              type="button"
+              onClick={() =>
+                setRouteDraft({
+                  origin: "",
+                  originAddress: "",
+                  destination: "",
+                  destinationAddress: "",
+                  mode: "car",
+                  plannedDurationMinutes: "",
+                })
+              }
+            >
+              + Trasferimento
+            </button>
+          </div>
         </div>
       )}
+
       <SortableTimeline
         items={items}
         itemKey={(item) => `${item.kind}-${item.id}`}
         disabled={!editMode}
         onReorder={(next) => void reorder(next)}
       >
-        {(item, index, { dragHandleProps }) => {
+        {(item, _index, { dragHandleProps }) => {
           if (item.kind === "route") {
-            previousCity = "";
             const route = item.route;
             return (
               <article
@@ -974,20 +1101,16 @@ export function ModernTripView({
                   <div className="timeline-controls">
                     <button
                       type="button"
-                      className="drag-handle"
-                      aria-label={`Trascina trasferimento da ${route.origin} a ${route.destination}`}
-                      {...dragHandleProps}
-                    >
-                      ☰
-                    </button>
-                    <button
+                      className="route-edit-button"
+                      aria-label="Modifica trasferimento"
                       onClick={() =>
                         setRouteDraft({
                           id: route.id,
                           origin: route.origin,
                           originAddress: route.originAddress || "",
                           destination: route.destination,
-                          destinationAddress: route.destinationAddress || "",
+                          destinationAddress:
+                            route.destinationAddress || "",
                           mode: route.mode || "car",
                           plannedDurationMinutes:
                             route.plannedDurationMinutes?.toString() || "",
@@ -996,43 +1119,54 @@ export function ModernTripView({
                     >
                       ✎
                     </button>
-                    <button onClick={() => move("route", route.id, -1)}>
-                      ↑
+
+                    <button
+                      type="button"
+                      className="route-delete-button"
+                      aria-label="Elimina trasferimento"
+                      onClick={() => setConfirmDelete(item)}
+                    >
+                      ×
                     </button>
-                    <button onClick={() => move("route", route.id, 1)}>
-                      ↓
+
+                    <button
+                      type="button"
+                      className="drag-handle route-drag-handle"
+                      aria-label={`Trascina trasferimento da ${route.origin} a ${route.destination}`}
+                      title="Trascina per riordinare"
+                      {...dragHandleProps}
+                    >
+                      <span />
+                      <span />
+                      <span />
                     </button>
-                    <button onClick={() => setConfirmDelete(item)}>×</button>
                   </div>
                 )}
               </article>
             );
           }
-          const stop = item.stop,
-            showCity = stop.city !== previousCity;
-          previousCity = stop.city;
-          const next = items[index + 1],
-            endCity =
-              !next ||
-              next.kind === "route" ||
-              (next.kind === "stop" && next.stop.city !== stop.city);
+          const stop = item.stop;
+
           return (
-            <div className="timeline-stop-wrap" key={`stop-${stop.id}`}>
-              {showCity && (
-                <header className="timeline-city">
-                  <small>LOCATION</small>
-                  <strong>{stop.city}</strong>
-                  <button onClick={() => onGuide(stop.city)}>Guida →</button>
-                </header>
-              )}
+            <div
+              className="timeline-stop-wrap"
+              key={`stop-${stop.id}`}
+            >
               <StopRow
                 stop={stop}
                 editMode={editMode}
                 menu={menu === `stop-${stop.id}`}
                 onMenu={() =>
-                  setMenu(menu === `stop-${stop.id}` ? null : `stop-${stop.id}`)
+                  setMenu(
+                    menu === `stop-${stop.id}`
+                      ? null
+                      : `stop-${stop.id}`,
+                  )
                 }
-                onOpen={() => setActive(asTripStop(stop))}
+                onOpen={() => {
+                  setMenu(null);
+                  setActive(asTripStop(stop));
+                }}
                 onEdit={() => {
                   setMenu(null);
                   setStopDraft({
@@ -1042,6 +1176,8 @@ export function ModernTripView({
                     city: stop.city,
                     itemType: stop.itemType,
                     notes: stop.notes || "",
+                    startTime: stop.startTime ?? undefined,
+                    endTime: stop.endTime ?? undefined,
                     coordinates: stop.coordinates,
                   });
                 }}
@@ -1053,26 +1189,8 @@ export function ModernTripView({
                   setMenu(null);
                   setConfirmDelete(item);
                 }}
-                onMove={(direction) => move("stop", stop.id, direction)}
                 dragHandleProps={dragHandleProps}
               />
-              {editMode && endCity && (
-                <button
-                  className="add-stop-inline"
-                  onClick={() =>
-                    setStopDraft({
-                      name: "",
-                      address: "",
-                      city: stop.city,
-                      itemType: "poi",
-                      notes: "",
-                      coordinates: null,
-                    })
-                  }
-                >
-                  + Aggiungi tappa a {stop.city}
-                </button>
-              )}
             </div>
           );
         }}
@@ -1126,6 +1244,8 @@ export function ModernTripView({
                     city: stop.city,
                     itemType: stop.itemType,
                     notes: stop.notes || "",
+                    startTime: stop.startTime ?? undefined,
+                    endTime: stop.endTime ?? undefined,
                     coordinates: stop.coordinates,
                   });
                 }
