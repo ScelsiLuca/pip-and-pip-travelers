@@ -4142,3 +4142,44 @@ gmp-place-details-compact {
   }
 }
 
+/* MOBILE OVERLAY Z-INDEX FIX */
+@media (max-width: 680px) {
+
+  /*
+   * La bottom navigation deve restare sopra il contenuto normale,
+   * ma sotto BottomSheet, dialog e altri overlay.
+   */
+  .app > nav {
+    z-index: 3000 !important;
+  }
+
+  .sheet-layer {
+    z-index: 12000 !important;
+  }
+
+  .confirm-layer {
+    z-index: 13000 !important;
+  }
+
+  .pip-toast {
+    z-index: 14000 !important;
+  }
+
+  /*
+   * Safari/iOS: permette alla sheet di scorrere fino
+   * agli ultimi controlli senza tagliarli.
+   */
+  .bottom-sheet {
+    overflow-y: auto !important;
+    overscroll-behavior: contain;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .simulation-sheet {
+    padding-bottom: max(
+      20px,
+      env(safe-area-inset-bottom)
+    );
+  }
+}
+
