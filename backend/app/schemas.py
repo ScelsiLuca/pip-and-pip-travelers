@@ -59,6 +59,21 @@ class SavedPlaceIn(BaseModel):
     address: str | None = None
     notes: str | None = None
     link: str | None = None
+    trip_day_id: int | None = None
+    sort_order: int | None = None
+
+
+class TripBoardMoveIn(BaseModel):
+    source_type: str
+    source_id: int
+
+    target_type: str
+    trip_day_id: int
+
+    target_index: int | None = None
+
+    # Mandatory only when moving into itinerary.
+    start_time: str | None = None
 
 class PlaceAutocompleteIn(BaseModel):
     input: str = Field(min_length=2, max_length=200)

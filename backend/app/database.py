@@ -28,6 +28,10 @@ def migrate_schema() -> None:
         "itinerary_stops":{
             "start_time":"VARCHAR(5)",
             "end_time":"VARCHAR(5)"
+        },
+        "saved_places":{
+            "trip_day_id":"INTEGER",
+            "sort_order":"INTEGER NOT NULL DEFAULT 0"
         }
     }
     with engine.begin() as connection:

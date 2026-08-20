@@ -89,6 +89,21 @@ class SavedPlace(Base):
     id: Mapped[int] = mapped_column(primary_key=True)
     name: Mapped[str] = mapped_column(String(160))
     category: Mapped[str] = mapped_column(String(30))
+
+    # Optional/Food can now belong explicitly to an itinerary day.
+    # Nullable keeps legacy saved places valid.
+    trip_day_id: Mapped[int | None] = mapped_column(
+        ForeignKey("trip_days.id"),
+        nullable=True,
+        index=True,
+    )
+
+    # Ordering inside Optional / Food containers.
+    sort_order: Mapped[int] = mapped_column(
+        Integer,
+        default=0,
+    )
+
     latitude: Mapped[float | None] = mapped_column(Float, nullable=True)
     longitude: Mapped[float | None] = mapped_column(Float, nullable=True)
     address: Mapped[str | None] = mapped_column(String(240), nullable=True)

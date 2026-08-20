@@ -1511,139 +1511,38 @@ function TripView({ trip, onChanged }: { trip: Trip; onChanged: () => void }) {
 }
 
 function MapView({ trip }: { trip: Trip }) {
-  const [mode, setMode] = useState<"today" | "all">("all");
-  const [routes, setRoutes] = useState<Array<{ routing: RouteLive }>>([]);
-  const[selectedPoint,setSelectedPoint]=useState<{name:string;lat:number;lon:number;day:number;category:string}|null>(null);
-  const days =
-    mode === "today"
-      ? trip.days.filter((d) => d.date === trip.context.today)
-      : trip.days;
-  const points = useMemo(
-    () =>
-      days.flatMap((d) => {
-        const p: Array<{
-          name: string;
-          lat: number;
-          lon: number;
-          day: number;
-          category: string;
-        }> = [];
-        if (d.coordinates)
-          p.push({
-            name: d.baseCity || d.title || `Day ${d.dayNumber}`,
-            lat: d.coordinates.lat,
-            lon: d.coordinates.lon,
-            day: d.dayNumber,
-            category: "città",
-          });
-        d.activities.forEach(
-          (a) =>
-            a.coordinates &&
-            p.push({
-              name: a.title,
-              lat: a.coordinates.lat,
-              lon: a.coordinates.lon,
-              day: d.dayNumber,
-              category: a.activityType,
-            }),
-        );
-        (d.stops||[]).forEach(
-          (x) =>
-            x.coordinates &&
-            p.push({
-              name: x.name,
-              lat: x.coordinates.lat,
-              lon: x.coordinates.lon,
-              day: d.dayNumber,
-              category: x.itemType || "poi",
-            }),
-        );
-        return p;
-      }),
-    [days],
-  );
-  useEffect(() => {
-    Promise.all(
-      days
-        .filter((d) => d.routes.length)
-        .map((d) => api<Array<{ routing: RouteLive }>>(`/api/routes/${d.id}`)),
-    )
-      .then((x) => setRoutes(x.flat()))
-      .catch(() => setRoutes([]));
-  }, [mode, trip]);
+  const today =
+    trip.days.find(
+      (day) => day.date === trip.context.today,
+    ) ||
+    trip.days[0] ||
+    null;
+
   return (
-    <main className="map-page">
+    <main className="map-page google-map-page">
       <header className="page-head map-title">
         <div>
           <p className="eyebrow">ESPLORA</p>
           <h1>Mappa del viaggio</h1>
-        </div>
-        <div className="segmented">
-          <button
-            className={mode === "today" ? "active" : ""}
-            onClick={() => setMode("today")}
-          >
-            Oggi
-          </button>
-          <button
-            className={mode === "all" ? "active" : ""}
-            onClick={() => setMode("all")}
-          >
-            Intero viaggio
-          </button>
+          <p className="map-page-subtitle">
+            Tutte le tappe e i trasferimenti del nostro itinerario.
+          </p>
         </div>
       </header>
-      <div className="map-wrap">
-        <MapContainer center={[37.6, 14.0]} zoom={8} scrollWheelZoom>
-          <TileLayer
-            attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-            url="https://tile.openstreetmap.org/{z}/{x}/{y}.png"
-          />
-          {routes.map(
-            (x, i) =>
-              x.routing.geometry && (
-                <Polyline
-                  key={i}
-                  positions={x.routing.geometry.coordinates.map((c) => [
-                    c[1],
-                    c[0],
-                  ])}
-                  pathOptions={{ color: "#df7139", weight: 4 }}
-                />
-              ),
-          )}
-          {points.map((p, i) => (
-            <Marker key={i} position={[p.lat, p.lon]} icon={marker} eventHandlers={{click:()=>setSelectedPoint(p)}}>
-              <Popup>
-                <strong>{p.name}</strong>
-                <br />
-                Day {p.day} · {p.category}
-                <br />
-                <a
-                  href={`https://www.google.com/maps/dir/?api=1&destination=${p.lat},${p.lon}`}
-                  target="_blank"
-                >
-                  Google Maps
-                </a>{" "}
-                ·{" "}
-                <a
-                  href={`https://maps.apple.com/?daddr=${p.lat},${p.lon}`}
-                  target="_blank"
-                >
-                  Apple Maps
-                </a>
-              </Popup>
-            </Marker>
-          ))}
-        </MapContainer>
-        {!points.length && (
-          <div className="map-empty">Nessuna tappa per questa modalità.</div>
-        )}
-      </div>
-      <BottomSheet open={!!selectedPoint} title={selectedPoint?.name||''} onClose={()=>setSelectedPoint(null)}>{selectedPoint&&<><p className="sheet-location">Day {selectedPoint.day} · {selectedPoint.category}</p><div className="sheet-primary-actions"><a className="pip-primary" href={`https://www.google.com/maps/dir/?api=1&destination=${selectedPoint.lat},${selectedPoint.lon}`} target="_blank" rel="noreferrer">Naviga →</a><button className="pip-secondary" onClick={()=>setSelectedPoint(null)}>Torna alla mappa</button></div></>}</BottomSheet>
+
+      <OperationalMap
+        day={today}
+        days={trip.days}
+        currentPosition={null}
+        nextLeg={null}
+        route={null}
+        initialMode="trip"
+        pageMode
+      />
     </main>
   );
 }
+
 
 function Placeholder({ kind }: { kind: "alerts" | "more" }) {
   return (

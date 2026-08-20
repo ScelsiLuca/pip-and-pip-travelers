@@ -18,6 +18,93 @@ export type SortableRenderState = {
   isDragging: boolean;
 };
 
+export {
+  DragDropContext,
+  Droppable,
+  Draggable,
+};
+
+export type {
+  DropResult,
+  DraggableProvidedDragHandleProps,
+};
+
+export function SortableDroppable<T>({
+  droppableId,
+  items,
+  itemKey,
+  disabled,
+  className = "unified-timeline",
+  children,
+}: {
+  droppableId: string;
+  items: T[];
+  itemKey: (item: T) => string;
+  disabled: boolean;
+  className?: string;
+  children: (
+    item: T,
+    index: number,
+    state: SortableRenderState,
+  ) => ReactNode;
+}) {
+  return (
+    <Droppable
+      droppableId={droppableId}
+      direction="vertical"
+    >
+      {(dropProvided) => (
+        <section
+          className={className}
+          ref={dropProvided.innerRef}
+          {...dropProvided.droppableProps}
+        >
+          {items.map((item, index) => (
+            <Draggable
+              draggableId={itemKey(item)}
+              index={index}
+              isDragDisabled={disabled}
+              disableInteractiveElementBlocking
+              key={itemKey(item)}
+            >
+              {(dragProvided, snapshot) => (
+                <div
+                  className={`sortable-timeline-item${
+                    snapshot.isDragging
+                      ? " is-dragging"
+                      : ""
+                  }`}
+                  ref={dragProvided.innerRef}
+                  {...dragProvided.draggableProps}
+                  style={{
+                    ...dragProvided.draggableProps.style,
+                    ...(snapshot.isDropAnimating
+                      ? { transitionDuration: "0.04s" }
+                      : {}),
+                  }}
+                >
+                  {children(
+                    item,
+                    index,
+                    {
+                      dragHandleProps:
+                        dragProvided.dragHandleProps,
+                      isDragging:
+                        snapshot.isDragging,
+                    },
+                  )}
+                </div>
+              )}
+            </Draggable>
+          ))}
+
+          {dropProvided.placeholder}
+        </section>
+      )}
+    </Droppable>
+  );
+}
+
 export function SortableTimeline<T>({
   items,
   itemKey,
@@ -75,99 +162,32 @@ export function SortableTimeline<T>({
       moved,
     );
 
-    /*
-     * Aggiorniamo subito la UI.
-     * In questo modo il drop non deve aspettare
-     * la risposta del backend.
-     */
     setOrderedItems(next);
 
     savingReorder.current = true;
 
     Promise.resolve(onReorder(next))
       .then(() => {
-        /*
-         * Lasciamo terminare completamente
-         * l'animazione di drop prima di permettere
-         * al parent di risincronizzare la lista.
-         */
         window.setTimeout(() => {
           savingReorder.current = false;
         }, 150);
       })
       .catch(() => {
         savingReorder.current = false;
-
-        /*
-         * Se il backend fallisce,
-         * torniamo all'ordine precedente.
-         */
         setOrderedItems(previous);
       });
   };
 
   return (
     <DragDropContext onDragEnd={onDragEnd}>
-      <Droppable
+      <SortableDroppable
         droppableId="trip-timeline"
-        direction="vertical"
+        items={orderedItems}
+        itemKey={itemKey}
+        disabled={disabled}
       >
-        {(dropProvided) => (
-          <section
-            className="unified-timeline"
-            ref={dropProvided.innerRef}
-            {...dropProvided.droppableProps}
-          >
-            {orderedItems.map(
-              (item, index) => (
-                <Draggable
-                  draggableId={itemKey(item)}
-                  index={index}
-                  isDragDisabled={disabled}
-                  disableInteractiveElementBlocking
-                  key={itemKey(item)}
-                >
-                  {(
-                    dragProvided,
-                    snapshot,
-                  ) => (
-                    <div
-                      className={`sortable-timeline-item${
-                        snapshot.isDragging
-                          ? " is-dragging"
-                          : ""
-                      }`}
-                      ref={
-                        dragProvided.innerRef
-                      }
-                      {...dragProvided.draggableProps}
-                      style={{
-                        ...dragProvided.draggableProps.style,
-                        ...(snapshot.isDropAnimating
-                        ? { transitionDuration: "0.04s" }
-                        : {}),
-}}
-                    >
-                      {children(
-                        item,
-                        index,
-                        {
-                          dragHandleProps:
-                            dragProvided.dragHandleProps,
-                          isDragging:
-                            snapshot.isDragging,
-                        },
-                      )}
-                    </div>
-                  )}
-                </Draggable>
-              ),
-            )}
-
-            {dropProvided.placeholder}
-          </section>
-        )}
-      </Droppable>
+        {children}
+      </SortableDroppable>
     </DragDropContext>
   );
 }

@@ -21,7 +21,13 @@ import {
   poiGuideContent,
   type PoiGuideContent,
 } from "./guideContent";
-import { SortableTimeline, type SortableRenderState } from "./SortableTimeline";
+import {
+  DragDropContext,
+  SortableDroppable,
+  type DropResult,
+  type SortableRenderState,
+} from "./SortableTimeline";
+import type { SavedPlace } from "./SavedPlaces";
 
 export function BottomSheet({
   open,
@@ -1785,6 +1791,81 @@ function StopRow({
   );
 }
 
+function derivedInterdayTransfer(
+  trip: Trip,
+  day: TripDay,
+): TripRoute | null {
+  const dayIndex = trip.days.findIndex(
+    (item) => item.id === day.id,
+  );
+
+  if (
+    dayIndex < 0 ||
+    dayIndex >= trip.days.length - 1
+  ) {
+    return null;
+  }
+
+  const nextDay = trip.days[dayIndex + 1];
+
+  const currentStops = [...(day.stops || [])]
+    .filter((stop) => !!stop.coordinates)
+    .sort((a, b) => a.sortOrder - b.sortOrder);
+
+  const nextStops = [...(nextDay.stops || [])]
+    .filter((stop) => !!stop.coordinates)
+    .sort((a, b) => a.sortOrder - b.sortOrder);
+
+  const origin =
+    currentStops[currentStops.length - 1];
+
+  const destination = nextStops[0];
+
+  if (
+    !origin?.coordinates ||
+    !destination?.coordinates
+  ) {
+    return null;
+  }
+
+  /*
+   * Se il giorno contiene gi? almeno un trasferimento reale,
+   * non ne generiamo uno automatico.
+   *
+   * I TripRoute esistenti hanno priorit? perch? fanno parte
+   * dell'itinerario salvato e possono avere origine/destinazione
+   * leggermente diverse dalle coordinate delle tappe.
+   */
+  if ((day.routes || []).length > 0) {
+    return null;
+  }
+
+  return {
+    /*
+     * ID negativo solo lato frontend.
+     * Non viene mai persistito n? modificato.
+     */
+    id: -(100000 + day.dayNumber),
+
+    origin: origin.name,
+    destination: destination.name,
+
+    originAddress: origin.address || null,
+    destinationAddress: destination.address || null,
+
+    originCoordinates: origin.coordinates,
+    destinationCoordinates: destination.coordinates,
+
+    plannedDeparture: null,
+    plannedDurationMinutes: null,
+    distanceKm: null,
+
+    mode: "car",
+
+    sortOrder: Number.MAX_SAFE_INTEGER,
+  };
+}
+
 export function ModernTripView({
   trip,
   onGuide,
@@ -1807,9 +1888,62 @@ export function ModernTripView({
       null,
     ),
     [confirmDelete, setConfirmDelete] = useState<TimelineItem | null>(null),
-    [confirmReset, setConfirmReset] = useState(false);
-  const selected = trip.days.find((d) => d.id === selectedId) || trip.days[0],
-    items = useMemo(() => timeline(selected), [selected]);
+    [confirmReset, setConfirmReset] = useState(false),
+    [savedPlaces, setSavedPlaces] = useState<SavedPlace[]>([]),
+    [promotionTime, setPromotionTime] = useState(""),
+    [pendingPromotion, setPendingPromotion] = useState<{
+      place: SavedPlace;
+      sourceType: "optional" | "food";
+      targetIndex: number;
+    } | null>(null);
+  const selected =
+      trip.days.find((d) => d.id === selectedId) || trip.days[0],
+    items = useMemo(() => timeline(selected), [selected]),
+    nextDayTransfer = useMemo(
+      () => derivedInterdayTransfer(trip, selected),
+      [trip, selected],
+    ),
+    optionalPlaces = useMemo(
+      () =>
+        savedPlaces
+          .filter(
+            (place) =>
+              place.trip_day_id === selected.id &&
+              place.category === "optional",
+          )
+          .sort(
+            (a, b) =>
+              (a.sort_order ?? 0) - (b.sort_order ?? 0),
+          ),
+      [savedPlaces, selected.id],
+    ),
+    foodPlaces = useMemo(
+      () =>
+        savedPlaces
+          .filter(
+            (place) =>
+              place.trip_day_id === selected.id &&
+              place.category === "food",
+          )
+          .sort(
+            (a, b) =>
+              (a.sort_order ?? 0) - (b.sort_order ?? 0),
+          ),
+      [savedPlaces, selected.id],
+    );
+
+  const loadSavedPlaces = async () => {
+    try {
+      const all = await api<SavedPlace[]>("/api/saved");
+      setSavedPlaces(all);
+    } catch {
+      setSavedPlaces([]);
+    }
+  };
+
+  useEffect(() => {
+    void loadSavedPlaces();
+  }, [selected.id, trip]);
   const flash = (message: string) => {
     setToast(message);
     setTimeout(() => setToast(""), 2200);
@@ -1824,6 +1958,212 @@ export function ModernTripView({
     onChanged();
     flash("Nuovo ordine salvato");
   };
+
+  const moveBoardItem = async (
+    sourceType: "itinerary" | "optional" | "food",
+    sourceId: number,
+    targetType: "itinerary" | "optional" | "food",
+    targetIndex: number,
+    startTime?: string,
+  ) => {
+    await api("/api/trip/items/move", {
+      method: "POST",
+      body: JSON.stringify({
+        source_type: sourceType,
+        source_id: sourceId,
+        target_type: targetType,
+        trip_day_id: selected.id,
+        target_index: targetIndex,
+        start_time: startTime || null,
+      }),
+    });
+
+    await loadSavedPlaces();
+    onChanged();
+  };
+
+  const boardDragEnd = async (result: DropResult) => {
+    const destination = result.destination;
+
+    if (!destination) return;
+
+    const sourceType = result.source.droppableId as
+      | "itinerary"
+      | "optional"
+      | "food";
+
+    const targetType = destination.droppableId as
+      | "itinerary"
+      | "optional"
+      | "food";
+
+    if (
+      sourceType === targetType &&
+      result.source.index === destination.index
+    ) {
+      return;
+    }
+
+    if (
+      sourceType === "itinerary" &&
+      targetType === "itinerary"
+    ) {
+      const next = [...items];
+      const [moved] = next.splice(
+        result.source.index,
+        1,
+      );
+
+      next.splice(
+        destination.index,
+        0,
+        moved,
+      );
+
+      await reorder(next);
+      return;
+    }
+
+    if (sourceType === "itinerary") {
+      const item = items[result.source.index];
+
+      if (!item) return;
+
+      if (item.kind === "route") {
+        flash(
+          "I trasferimenti possono essere riordinati solo nell'itinerario",
+        );
+        return;
+      }
+
+      try {
+        await moveBoardItem(
+          "itinerary",
+          item.id,
+          targetType,
+          destination.index,
+        );
+
+        flash(
+          targetType === "food"
+            ? "Tappa spostata in Food consigliato"
+            : "Tappa spostata nelle tappe aggiuntive",
+        );
+      } catch {
+        flash("Impossibile spostare la tappa");
+      }
+
+      return;
+    }
+
+    const sourceList =
+      sourceType === "food"
+        ? foodPlaces
+        : optionalPlaces;
+
+    const place = sourceList[result.source.index];
+
+    if (!place) return;
+
+    if (targetType === "itinerary") {
+      setPendingPromotion({
+        place,
+        sourceType,
+        targetIndex: destination.index,
+      });
+
+      setPromotionTime("");
+      return;
+    }
+
+    try {
+      await moveBoardItem(
+        sourceType,
+        place.id,
+        targetType,
+        destination.index,
+      );
+
+      flash(
+        targetType === "food"
+          ? "Spostato in Food consigliato"
+          : "Spostato nelle tappe aggiuntive",
+      );
+    } catch {
+      flash("Impossibile spostare la location");
+    }
+  };
+
+  const confirmPromotion = async () => {
+    if (!pendingPromotion || !promotionTime) return;
+
+    try {
+      await moveBoardItem(
+        pendingPromotion.sourceType,
+        pendingPromotion.place.id,
+        "itinerary",
+        pendingPromotion.targetIndex,
+        promotionTime,
+      );
+
+      setPendingPromotion(null);
+      setPromotionTime("");
+
+      flash("Tappa aggiunta all'itinerario");
+    } catch {
+      flash(
+        "Impossibile aggiungere la tappa all'itinerario",
+      );
+    }
+  };
+
+  const savedPlaceAsTripStop = (
+    place: SavedPlace,
+    label: "Tappa Aggiuntiva" | "Food Consigliato",
+  ): TripStop => {
+    const city =
+      selected.baseCity ||
+      selected.title ||
+      "Sicilia";
+
+    return {
+      id: poiIdentity(place.name, city),
+      key: `saved-${place.id}`,
+      name: place.name,
+      city,
+      kind: "poi",
+      address: place.address || undefined,
+      notes: place.notes || label,
+      coordinates:
+        place.latitude != null &&
+        place.longitude != null
+          ? {
+              lat: place.latitude,
+              lon: place.longitude,
+            }
+          : null,
+      status: "planned",
+      sourceIndex: 0,
+      sortOrder: place.sort_order ?? 0,
+      original: false,
+    };
+  };
+
+  const savedMapsUrl = (place: SavedPlace) => {
+    if (place.link) return place.link;
+
+    if (
+      place.latitude != null &&
+      place.longitude != null
+    ) {
+      return `https://www.google.com/maps/dir/?api=1&destination=${place.latitude},${place.longitude}`;
+    }
+
+    return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(
+      `${place.name} ${place.address || ""}`,
+    )}`;
+  };
+
   const status = async (stop: TripStop, value: StopStatus) => {
     if (stop.backendId)
       await api(`/api/stops/${stop.backendId}`, {
@@ -1946,12 +2286,25 @@ export function ModernTripView({
         </div>
       )}
 
-      <SortableTimeline
-        items={items}
-        itemKey={(item) => `${item.kind}-${item.id}`}
-        disabled={!editMode}
-        onReorder={reorder}
+      <DragDropContext
+        onDragEnd={(result) => void boardDragEnd(result)}
       >
+        <section className="trip-board-section itinerary-board-section">
+          <div className="trip-board-heading">
+            <div>
+              <small>PROGRAMMA</small>
+              <h2>Itinerario</h2>
+            </div>
+            <span>{selected.stops.length} tappe</span>
+          </div>
+
+          <SortableDroppable
+            droppableId="itinerary"
+            items={items}
+            itemKey={(item) => `itinerary-${item.kind}-${item.id}`}
+            disabled={!editMode}
+            className="unified-timeline trip-board-list"
+          >
         {(item, _index, { dragHandleProps }) => {
           if (item.kind === "route") {
             const route = item.route;
@@ -2095,7 +2448,232 @@ export function ModernTripView({
             </div>
           );
         }}
-      </SortableTimeline>
+      </SortableDroppable>
+
+
+      {nextDayTransfer && (
+              <article className="transfer-card editable-transfer">
+                <span>
+                  {nextDayTransfer.mode === "walk"
+                    ? <>&#128694;</>
+                    : nextDayTransfer.mode === "boat"
+                      ? <>&#9973;</>
+                      : <>&#128663;</>}
+                </span>
+
+                <div>
+                  <small>TRASFERIMENTO</small>
+
+                  <strong>
+                    {nextDayTransfer.origin}
+                    {" "}
+                    &rarr;
+                    {" "}
+                    {nextDayTransfer.destination}
+                  </strong>
+
+                  <LiveRouteInfo route={nextDayTransfer} />
+                </div>
+
+                <div className="route-row-actions">
+                  <a
+                    className="timeline-map-link"
+                    href={routeMapsUrl(nextDayTransfer)}
+                    target="_blank"
+                    rel="noreferrer"
+                    aria-label={`Naviga verso ${nextDayTransfer.destination} con Google Maps`}
+                    title="Apri in Google Maps"
+                  >
+                    &rarr;
+                  </a>
+                </div>
+              </article>
+            )}
+</section>
+
+      <section className="trip-board-section optional-board-section">
+        <div className="trip-board-heading">
+          <div>
+            <small>EXTRA</small>
+            <h2>Tappe aggiuntive</h2>
+          </div>
+          <span>
+            {optionalPlaces.length}{" "}
+            {optionalPlaces.length === 1 ? "Tappa" : "Tappe"}
+          </span>
+        </div>
+
+        <SortableDroppable
+          droppableId="optional"
+          items={optionalPlaces}
+          itemKey={(place) => `optional-${place.id}`}
+          disabled={!editMode}
+          className="trip-board-list saved-board-list"
+        >
+          {(place, _index, { dragHandleProps }) => {
+          const savedStop = savedPlaceAsTripStop(
+            place,
+            "Tappa Aggiuntiva",
+          );
+
+          const openSavedPlace = () => {
+            setMenu(null);
+            setActive(savedStop);
+          };
+
+          return (
+            <article className="editable-stop saved-place-stop planned">
+              <div className="stop-status-wrap">
+                <button
+                  type="button"
+                  className="stop-status-button planned"
+                  aria-label={`Apri ${place.name}`}
+                  onClick={(event) => {
+                    event.stopPropagation();
+                    openSavedPlace();
+                  }}
+                >
+                  <span className="stop-status-core" />
+                </button>
+              </div>
+
+              <time className="saved-place-time">&mdash;</time>
+
+              <button
+                type="button"
+                className="stop-content saved-place-content"
+                onClick={openSavedPlace}
+              >
+                <strong>{place.name}</strong>
+
+                <small>Tappa Aggiuntiva</small>
+
+                {place.address && (
+                  <em>{place.address}</em>
+                )}
+              </button>
+
+              <button
+                type="button"
+                className="timeline-map-link saved-detail-button"
+                aria-label={`Apri dettagli di ${place.name}`}
+                title="Apri dettagli"
+                onClick={openSavedPlace}
+              >
+                &rarr;
+              </button>
+
+              {editMode && (
+                <button
+                  type="button"
+                  className="drag-handle"
+                  aria-label={`Trascina ${place.name}`}
+                  title="Trascina per riordinare"
+                  {...dragHandleProps}
+                >
+                  <span />
+                  <span />
+                  <span />
+                </button>
+              )}
+            </article>
+          );
+        }}
+            </SortableDroppable>
+</section>
+
+      <section className="trip-board-section food-board-section">
+        <div className="trip-board-heading">
+          <div>
+            <small>MANGIARE</small>
+            <h2>Food consigliato</h2>
+          </div>
+          <span>
+            {foodPlaces.length}{" "}
+            {foodPlaces.length === 1 ? "Tappa" : "Tappe"}
+          </span>
+        </div>
+
+        <SortableDroppable
+          droppableId="food"
+          items={foodPlaces}
+          itemKey={(place) => `food-${place.id}`}
+          disabled={!editMode}
+          className="trip-board-list saved-board-list"
+        >
+          {(place, _index, { dragHandleProps }) => {
+          const savedStop = savedPlaceAsTripStop(
+            place,
+            "Food Consigliato",
+          );
+
+          const openSavedPlace = () => {
+            setMenu(null);
+            setActive(savedStop);
+          };
+
+          return (
+            <article className="editable-stop saved-place-stop planned">
+              <div className="stop-status-wrap">
+                <button
+                  type="button"
+                  className="stop-status-button planned"
+                  aria-label={`Apri ${place.name}`}
+                  onClick={(event) => {
+                    event.stopPropagation();
+                    openSavedPlace();
+                  }}
+                >
+                  <span className="stop-status-core" />
+                </button>
+              </div>
+
+              <time className="saved-place-time">&mdash;</time>
+
+              <button
+                type="button"
+                className="stop-content saved-place-content"
+                onClick={openSavedPlace}
+              >
+                <strong>{place.name}</strong>
+
+                <small>Food Consigliato</small>
+
+                {place.address && (
+                  <em>{place.address}</em>
+                )}
+              </button>
+
+              <button
+                type="button"
+                className="timeline-map-link saved-detail-button"
+                aria-label={`Apri dettagli di ${place.name}`}
+                title="Apri dettagli"
+                onClick={openSavedPlace}
+              >
+                &rarr;
+              </button>
+
+              {editMode && (
+                <button
+                  type="button"
+                  className="drag-handle"
+                  aria-label={`Trascina ${place.name}`}
+                  title="Trascina per riordinare"
+                  {...dragHandleProps}
+                >
+                  <span />
+                  <span />
+                  <span />
+                </button>
+              )}
+            </article>
+          );
+        }}
+      </SortableDroppable>
+      </section>
+      </DragDropContext>
+
       {!items.length && (
           <section className="empty-day">
             <span>○</span>
@@ -2154,6 +2732,56 @@ export function ModernTripView({
             : undefined
         }
       />
+      <BottomSheet
+        open={!!pendingPromotion}
+        title="Aggiungi all'itinerario"
+        onClose={() => {
+          setPendingPromotion(null);
+          setPromotionTime("");
+        }}
+      >
+        <div className="trip-promotion-dialog">
+          <p>
+            {pendingPromotion
+              ? `A che ora vuoi inserire "${pendingPromotion.place.name}"?`
+              : ""}
+          </p>
+
+          <label>
+            Orario
+            <input
+              type="time"
+              value={promotionTime}
+              onChange={(event) =>
+                setPromotionTime(event.target.value)
+              }
+              required
+            />
+          </label>
+
+          <div className="saved-editor-actions">
+            <button
+              type="button"
+              onClick={() => {
+                setPendingPromotion(null);
+                setPromotionTime("");
+              }}
+            >
+              Annulla
+            </button>
+
+            <button
+              type="button"
+              className="pip-primary"
+              disabled={!promotionTime}
+              onClick={() => void confirmPromotion()}
+            >
+              Aggiungi all'itinerario
+            </button>
+          </div>
+        </div>
+      </BottomSheet>
+
       <StopEditor
         open={!!stopDraft}
         draft={stopDraft}

@@ -6,6 +6,10 @@ export type SavedPlace = {
   id: number;
   name: string;
   category: string;
+
+  trip_day_id?: number | null;
+  sort_order?: number | null;
+
   latitude?: number | null;
   longitude?: number | null;
   address?: string | null;
@@ -157,10 +161,12 @@ function SavedPlacesSection({
   location,
   position,
   food,
+  tripDayId,
 }: {
   location: string;
   position?: Coordinates | null;
   food: boolean;
+  tripDayId?: number;
 }) {
   const [places, setPlaces] = useState<SavedPlace[] | null>(null);
   const [refreshKey, setRefreshKey] = useState(0);
@@ -190,16 +196,33 @@ function SavedPlacesSection({
               ? place.category === "food"
               : place.category !== "food"
           )
-          .filter(
-            (place) =>
+          .filter((place) => {
+            if (tripDayId != null && place.trip_day_id != null) {
+              return place.trip_day_id === tripDayId;
+            }
+
+            /*
+             * Compatibilit? con i SavedPlace esistenti:
+             * finch? trip_day_id ? NULL continuiamo a risolverli
+             * tramite la localit?, come faceva la versione precedente.
+             */
+            return (
               place.address
                 ?.toLowerCase()
                 .includes(locationLower) ||
               place.name
                 .toLowerCase()
                 .includes(locationLower)
-          )
+            );
+          })
           .sort((a, b) => {
+            const orderA = a.sort_order ?? 0;
+            const orderB = b.sort_order ?? 0;
+
+            if (orderA !== orderB) {
+              return orderA - orderB;
+            }
+
             const distanceA = placeDistance(a, position);
             const distanceB = placeDistance(b, position);
 
@@ -221,7 +244,13 @@ function SavedPlacesSection({
     return () => {
       active = false;
     };
-  }, [location, position, food, refreshKey]);
+  }, [
+    location,
+    position,
+    food,
+    tripDayId,
+    refreshKey,
+  ]);
 
   useEffect(() => {
   if (!places?.length || !position) {
@@ -450,6 +479,9 @@ function SavedPlacesSection({
           : Number(editing.longitude),
       notes: editing.notes.trim() || null,
       link: editing.link.trim() || null,
+
+      trip_day_id: tripDayId ?? null,
+      sort_order: null,
     };
 
     if (
@@ -872,14 +904,17 @@ return (
 export function FoodRecommendations({
   location,
   position,
+  tripDayId,
 }: {
   location: string;
   position?: Coordinates | null;
+  tripDayId?: number;
 }) {
   return (
     <SavedPlacesSection
       location={location}
       position={position}
+      tripDayId={tripDayId}
       food
     />
   );
@@ -889,15 +924,18 @@ export function OptionalStops({
   location,
   dayNumber: _dayNumber,
   position,
+  tripDayId,
 }: {
   location: string;
   dayNumber?: number;
   position?: Coordinates | null;
+  tripDayId?: number;
 }) {
   return (
     <SavedPlacesSection
       location={location}
       position={position}
+      tripDayId={tripDayId}
       food={false}
     />
   );

@@ -13,7 +13,9 @@ from .config import settings
 from .database import Base, SessionLocal, engine, get_db, migrate_schema
 from .models import Activity, ChecklistItem, ItineraryStop, Route, SavedPlace, TripDay
 from .schemas import (ActivityIn, ActivityPatch, NavigationRequest, ReorderRequest, RouteIn,
-    RoutePatch, SavedPlaceIn, StopIn, StopPatch, PlaceAutocompleteIn)
+    RoutePatch, SavedPlaceIn, StopIn, StopPatch, PlaceAutocompleteIn,
+    TripBoardMoveIn,
+)
 from .services import (ROME, current_trip_context, get_next_activity, get_next_trip_leg, google_destination, google_maps_url,
     geocode_preview, leave_now, navigation_origin, prioritize_alerts, sea, seed_database, serialize_day,
     stop_destination, next_itinerary_stop, reverse_geocode, trip_context, weather, weather_alerts)
@@ -285,6 +287,407 @@ def reorder_timeline(day_id:int,payload:ReorderRequest,db:Session=Depends(get_db
     if len(received)!=len(set(received)) or set(received)!=set(valid):raise HTTPException(422,"La sequenza deve includere una sola volta tutti gli elementi attivi")
     for index,key in enumerate(received,1):valid[key].sort_order=index*100
     db.commit();return {"status":"ok","items":len(received)}
+
+
+
+def _normalize_saved_places(
+    db: Session,
+    trip_day_id: int,
+    category: str,
+) -> None:
+    items = db.scalars(
+        select(SavedPlace)
+        .where(
+            SavedPlace.trip_day_id == trip_day_id,
+            SavedPlace.category == category,
+        )
+        .order_by(
+            SavedPlace.sort_order,
+            SavedPlace.name,
+        )
+    ).all()
+
+    for index, item in enumerate(items, 1):
+        item.sort_order = index * 100
+
+
+def _normalize_day_timeline(
+    day: TripDay,
+) -> None:
+    items = sorted(
+        [
+            *[
+                stop
+                for stop in day.stops
+                if not stop.archived
+            ],
+            *[
+                route
+                for route in day.routes
+                if not route.archived
+            ],
+        ],
+        key=lambda item: item.sort_order or 0,
+    )
+
+    for index, item in enumerate(items, 1):
+        item.sort_order = index * 100
+
+
+def _insert_stop_by_time(
+    day: TripDay,
+    new_stop: ItineraryStop,
+) -> None:
+    active_stops = sorted(
+        [
+            stop
+            for stop in day.stops
+            if not stop.archived
+            and stop.id != new_stop.id
+        ],
+        key=lambda stop: stop.sort_order or 0,
+    )
+
+    active_routes = [
+        route
+        for route in day.routes
+        if not route.archived
+    ]
+
+    timeline = sorted(
+        [*active_stops, *active_routes],
+        key=lambda item: item.sort_order or 0,
+    )
+
+    insert_before = next(
+        (
+            stop
+            for stop in active_stops
+            if stop.start_time
+            and new_stop.start_time
+            and stop.start_time > new_stop.start_time
+        ),
+        None,
+    )
+
+    if insert_before:
+        target_index = next(
+            index
+            for index, item in enumerate(timeline)
+            if isinstance(item, ItineraryStop)
+            and item.id == insert_before.id
+        )
+    else:
+        stop_indexes = [
+            index
+            for index, item in enumerate(timeline)
+            if isinstance(item, ItineraryStop)
+        ]
+
+        target_index = (
+            stop_indexes[-1] + 1
+            if stop_indexes
+            else len(timeline)
+        )
+
+    timeline.insert(target_index, new_stop)
+
+    for index, item in enumerate(timeline, 1):
+        item.sort_order = index * 100
+
+
+@app.post("/api/trip/items/move")
+def move_trip_board_item(
+    payload: TripBoardMoveIn,
+    db: Session = Depends(get_db),
+):
+    valid_types = {
+        "itinerary",
+        "optional",
+        "food",
+    }
+
+    if payload.source_type not in valid_types:
+        raise HTTPException(422, "Tipo sorgente non valido")
+
+    if payload.target_type not in valid_types:
+        raise HTTPException(422, "Tipo destinazione non valido")
+
+    day = db.get(TripDay, payload.trip_day_id)
+
+    if not day:
+        raise HTTPException(404, "Giornata non trovata")
+
+    # --------------------------------------------------------
+    # OPTIONAL / FOOD -> ITINERARIO
+    # --------------------------------------------------------
+
+    if (
+        payload.source_type in {"optional", "food"}
+        and payload.target_type == "itinerary"
+    ):
+        if not payload.start_time:
+            raise HTTPException(
+                422,
+                "L'orario ? obbligatorio per inserire la tappa nell'itinerario",
+            )
+
+        saved = db.get(SavedPlace, payload.source_id)
+
+        if not saved:
+            raise HTTPException(404, "Luogo salvato non trovato")
+
+        if saved.category != payload.source_type:
+            raise HTTPException(
+                409,
+                "Categoria del luogo non coerente con la sorgente",
+            )
+
+        coordinates = (
+            {
+                "lat": saved.latitude,
+                "lon": saved.longitude,
+            }
+            if (
+                saved.latitude is not None
+                and saved.longitude is not None
+            )
+            else None
+        )
+
+        highest = max(
+            [
+                item.sort_order or 0
+                for item in [
+                    *[
+                        stop
+                        for stop in day.stops
+                        if not stop.archived
+                    ],
+                    *[
+                        route
+                        for route in day.routes
+                        if not route.archived
+                    ],
+                ]
+            ]
+            + [0]
+        )
+
+        stop = ItineraryStop(
+            trip_day_id=day.id,
+            name=saved.name,
+            city=day.base_city or day.title or saved.name,
+            item_type=(
+                "food"
+                if payload.source_type == "food"
+                else "poi"
+            ),
+            address=saved.address,
+            notes=saved.notes,
+            coordinates=coordinates,
+            start_time=payload.start_time,
+            end_time=None,
+            status="planned",
+            sort_order=highest + 100,
+            original_key=None,
+        )
+
+        db.add(stop)
+        db.flush()
+
+        _insert_stop_by_time(day, stop)
+
+        old_category = saved.category
+        old_day_id = saved.trip_day_id
+
+        db.delete(saved)
+
+        if old_day_id is not None:
+            _normalize_saved_places(
+                db,
+                old_day_id,
+                old_category,
+            )
+
+        db.commit()
+        db.refresh(stop)
+
+        return {
+            "status": "ok",
+            "type": "itinerary",
+            "id": stop.id,
+        }
+
+    # --------------------------------------------------------
+    # ITINERARIO -> OPTIONAL / FOOD
+    # --------------------------------------------------------
+
+    if (
+        payload.source_type == "itinerary"
+        and payload.target_type in {"optional", "food"}
+    ):
+        stop = db.get(ItineraryStop, payload.source_id)
+
+        if not stop or stop.archived:
+            raise HTTPException(404, "Tappa non trovata")
+
+        coordinates = stop.coordinates or {}
+
+        target_items = db.scalars(
+            select(SavedPlace)
+            .where(
+                SavedPlace.trip_day_id == day.id,
+                SavedPlace.category == payload.target_type,
+            )
+            .order_by(
+                SavedPlace.sort_order,
+                SavedPlace.name,
+            )
+        ).all()
+
+        target_index = (
+            payload.target_index
+            if payload.target_index is not None
+            else len(target_items)
+        )
+
+        target_index = max(
+            0,
+            min(target_index, len(target_items)),
+        )
+
+        saved = SavedPlace(
+            name=stop.name,
+            category=payload.target_type,
+            trip_day_id=day.id,
+            sort_order=0,
+            latitude=coordinates.get("lat"),
+            longitude=coordinates.get("lon"),
+            address=stop.address,
+            notes=stop.notes,
+            link=google_maps_url(
+                google_destination(
+                    stop.coordinates,
+                    stop.address,
+                    stop.name,
+                    stop.city,
+                )
+            ),
+        )
+
+        db.add(saved)
+        db.flush()
+
+        # La tappa esce dall'itinerario:
+        # start_time/end_time non vengono trasferiti.
+        db.delete(stop)
+        db.flush()
+
+        _normalize_day_timeline(day)
+
+        target_items = [
+            item
+            for item in target_items
+            if item.id != saved.id
+        ]
+
+        target_items.insert(
+            target_index,
+            saved,
+        )
+
+        for index, item in enumerate(target_items, 1):
+            item.sort_order = index * 100
+
+        db.commit()
+        db.refresh(saved)
+
+        return {
+            "status": "ok",
+            "type": payload.target_type,
+            "id": saved.id,
+        }
+
+    # --------------------------------------------------------
+    # OPTIONAL <-> FOOD / reorder
+    # --------------------------------------------------------
+
+    if (
+        payload.source_type in {"optional", "food"}
+        and payload.target_type in {"optional", "food"}
+    ):
+        saved = db.get(SavedPlace, payload.source_id)
+
+        if not saved:
+            raise HTTPException(404, "Luogo salvato non trovato")
+
+        old_category = saved.category
+        old_day_id = saved.trip_day_id
+
+        saved.category = payload.target_type
+        saved.trip_day_id = day.id
+
+        db.flush()
+
+        if (
+            old_day_id is not None
+            and (
+                old_day_id != day.id
+                or old_category != payload.target_type
+            )
+        ):
+            _normalize_saved_places(
+                db,
+                old_day_id,
+                old_category,
+            )
+
+        target_items = db.scalars(
+            select(SavedPlace)
+            .where(
+                SavedPlace.trip_day_id == day.id,
+                SavedPlace.category == payload.target_type,
+                SavedPlace.id != saved.id,
+            )
+            .order_by(
+                SavedPlace.sort_order,
+                SavedPlace.name,
+            )
+        ).all()
+
+        target_index = (
+            payload.target_index
+            if payload.target_index is not None
+            else len(target_items)
+        )
+
+        target_index = max(
+            0,
+            min(target_index, len(target_items)),
+        )
+
+        target_items.insert(
+            target_index,
+            saved,
+        )
+
+        for index, item in enumerate(target_items, 1):
+            item.sort_order = index * 100
+
+        db.commit()
+        db.refresh(saved)
+
+        return {
+            "status": "ok",
+            "type": saved.category,
+            "id": saved.id,
+        }
+
+    raise HTTPException(
+        422,
+        "Spostamento non supportato",
+    )
 
 
 @app.post("/api/trip/reset-original")
