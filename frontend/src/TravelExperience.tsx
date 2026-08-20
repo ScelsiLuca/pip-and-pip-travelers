@@ -164,49 +164,117 @@ const routeMapsUrl = (route: TripRoute) => {
 function Editorial({ content }: { content: PoiGuideContent }) {
   return (
     <div className="poi-editorial">
-      <p className="guide-lead">{content.shortIntro}</p>
-      <p>{content.description}</p>
+      <section>
+        <small>GENERAL INFO</small>
+        <p className="guide-lead">{content.shortIntro}</p>
+        {content.description && <p>{content.description}</p>}
+      </section>
+
       {content.whyVisit && (
         <section>
           <small>PERCHÉ VISITARLO</small>
           <p>{content.whyVisit}</p>
         </section>
       )}
-      {content.history && (
-        <section>
-          <small>STORIA</small>
-          <p>{content.history}</p>
-        </section>
-      )}
+
       {content.whatToSee && (
         <section className="fact-card">
           <small>DA GUARDARE</small>
           <p>{content.whatToSee}</p>
         </section>
       )}
-      {content.curiosities && (
-        <section>
-          <small>LO SAPEVI?</small>
-          <p>{content.curiosities}</p>
-        </section>
-      )}
+
       {content.practicalTips && (
         <section>
-          <small>CONSIGLIO PIP &amp; PIP</small>
+          <small>CONSIGLIO PIP & PIP</small>
           <p>{content.practicalTips}</p>
         </section>
       )}
+
       <a
         className="source-link"
         href={content.sourceUrl}
         target="_blank"
         rel="noreferrer"
       >
-        Fonte: {content.sourceLabel} ↗
+        Fonte: {content.sourceLabel} {"\u2197"}
       </a>
     </div>
   );
 }
+
+function repairGuideText(value: string) {
+  return value
+    .replace(/\u00c3\u00a0/g, "\u00e0")
+    .replace(/\u00c3\u00a8/g, "\u00e8")
+    .replace(/\u00c3\u00a9/g, "\u00e9")
+    .replace(/\u00c3\u00ac/g, "\u00ec")
+    .replace(/\u00c3\u00b2/g, "\u00f2")
+    .replace(/\u00c3\u00b9/g, "\u00f9")
+    .replace(/\u00e2\u0080\u0099/g, "\u2019")
+    .replace(/\u00e2\u0086\u0092/g, "\u2192")
+    .replace(/u\u00ca\u00bb/g, "u'");
+}
+
+function normalizeGuideKey(value: string) {
+  return repairGuideText(value)
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[\u2019']/g, "")
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-|-$/g, "");
+}
+
+function guideForStop(stop: TripStop): PoiGuideContent {
+  const specific =
+    poiGuideContent[stop.id] ||
+    poiGuideContent[normalizeGuideKey(stop.name)];
+
+  if (specific) {
+    return specific;
+  }
+
+  const cityKey = normalizeGuideKey(stop.city);
+  const city = cityGuideContent[cityKey];
+
+  if (city) {
+    return {
+      shortIntro: `${stop.name} \u00e8 una tappa del percorso a ${stop.city}.`,
+      description: "",
+      whyVisit:
+        `La guida specifica non \u00e8 ancora presente, ma la tappa resta collegata al contesto di ${stop.city}.`,
+      whatToSee:
+        stop.notes ||
+        "Osserva il luogo e il suo rapporto con il quartiere e con il paesaggio circostante.",
+      practicalTips:
+        city.localTip ||
+        city.tips ||
+        "Verifica sul posto eventuali orari, accessi e condizioni della visita.",
+      sourceLabel: city.sourceLabel,
+      sourceUrl: city.sourceUrl,
+    };
+  }
+
+  return {
+    shortIntro: `${stop.name} \u00e8 una tappa del viaggio in Sicilia.`,
+    description: "",
+    whyVisit:
+      "La tappa \u00e8 stata inserita nell'itinerario come punto di interesse o sosta operativa.",
+    whatToSee:
+      stop.notes ||
+      (stop.address
+        ? `Il punto indicato si trova presso ${stop.address}.`
+        : "Esplora il luogo e i dintorni con calma."),
+    practicalTips:
+      "Controlla le informazioni aggiornate prima della visita, soprattutto per accessi, orari e condizioni.",
+    sourceLabel: "Google Maps",
+    sourceUrl: `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(
+      `${stop.name} ${stop.city}`,
+    )}`,
+  };
+}
+
 export function StopSheet({
   stop,
   onClose,
@@ -220,7 +288,7 @@ export function StopSheet({
   onGuide: (city: string) => void;
   onEdit?: () => void;
 }) {
-  const content = stop ? poiGuideContent[stop.id] : null;
+  const content = stop ? guideForStop(stop) : null;
   return (
     <BottomSheet
       open={!!stop}
@@ -2467,7 +2535,7 @@ export function ModernTripView({
                   <strong>
                     {nextDayTransfer.origin}
                     {" "}
-                    &rarr;
+                    {'\u2192'}
                     {" "}
                     {nextDayTransfer.destination}
                   </strong>
@@ -2484,8 +2552,39 @@ export function ModernTripView({
                     aria-label={`Naviga verso ${nextDayTransfer.destination} con Google Maps`}
                     title="Apri in Google Maps"
                   >
-                    &rarr;
+                    &#8594;
                   </a>
+
+                  {editMode && (
+                    <button
+                      type="button"
+                      className="route-edit-button"
+                      aria-label="Modifica trasferimento inter-day"
+                      title="Modifica trasferimento"
+                      onClick={() =>
+                        setRouteDraft({
+                          origin: nextDayTransfer.origin,
+                          originAddress: nextDayTransfer.originAddress || "",
+                          originCoordinates:
+                            nextDayTransfer.originCoordinates || null,
+
+                          destination: nextDayTransfer.destination,
+                          destinationAddress:
+                            nextDayTransfer.destinationAddress || "",
+                          destinationCoordinates:
+                            nextDayTransfer.destinationCoordinates || null,
+
+                          mode: nextDayTransfer.mode || "car",
+                          plannedDurationMinutes:
+                            nextDayTransfer.plannedDurationMinutes?.toString() || "",
+                          distanceKm:
+                            nextDayTransfer.distanceKm?.toString() || "",
+                        })
+                      }
+                    >
+                      &#9998;
+                    </button>
+                  )}
                 </div>
               </article>
             )}
@@ -2553,15 +2652,17 @@ export function ModernTripView({
                 )}
               </button>
 
-              <button
-                type="button"
-                className="timeline-map-link saved-detail-button"
-                aria-label={`Apri dettagli di ${place.name}`}
-                title="Apri dettagli"
-                onClick={openSavedPlace}
+              <a
+                className="timeline-map-link"
+                href={savedMapsUrl(place)}
+                target="_blank"
+                rel="noreferrer"
+                aria-label={`Apri ${place.name} in Google Maps`}
+                title="Apri in Google Maps"
+                onClick={(event) => event.stopPropagation()}
               >
-                &rarr;
-              </button>
+                &#8594;
+              </a>
 
               {editMode && (
                 <button
@@ -2644,15 +2745,17 @@ export function ModernTripView({
                 )}
               </button>
 
-              <button
-                type="button"
-                className="timeline-map-link saved-detail-button"
-                aria-label={`Apri dettagli di ${place.name}`}
-                title="Apri dettagli"
-                onClick={openSavedPlace}
+              <a
+                className="timeline-map-link"
+                href={savedMapsUrl(place)}
+                target="_blank"
+                rel="noreferrer"
+                aria-label={`Apri ${place.name} in Google Maps`}
+                title="Apri in Google Maps"
+                onClick={(event) => event.stopPropagation()}
               >
-                &rarr;
-              </button>
+                &#8594;
+              </a>
 
               {editMode && (
                 <button
@@ -2834,12 +2937,165 @@ export function ModernTripView({
 }
 
 export function GuideView({ trip, initial, onChanged }: { trip: Trip; initial?: string; onChanged?:()=>void }) {
-  const guides = useMemo(() => guidesFromDays(trip.days), [trip]),
-    allStops = useMemo(() => guides.flatMap((g) => g.stops), [guides]);
-  const [query, setQuery] = useState(""),
-    [selected, setSelected] = useState<Guide | null>(null),
-    [poi, setPoi] = useState<TripStop | null>(null),
-    [version, setVersion] = useState(0);
+  const baseGuides = useMemo(
+    () => guidesFromDays(trip.days),
+    [trip],
+  );
+
+  const [savedGuidePlaces, setSavedGuidePlaces] =
+    useState<SavedPlace[]>([]);
+
+  const [query, setQuery] = useState("");
+  const [selected, setSelected] = useState<Guide | null>(null);
+  const [poi, setPoi] = useState<TripStop | null>(null);
+  const [version, setVersion] = useState(0);
+
+  useEffect(() => {
+    let active = true;
+
+    api<SavedPlace[]>("/api/saved")
+      .then((places) => {
+        if (active) {
+          setSavedGuidePlaces(places);
+        }
+      })
+      .catch(() => {
+        if (active) {
+          setSavedGuidePlaces([]);
+        }
+      });
+
+    return () => {
+      active = false;
+    };
+  }, [version]);
+
+  const normalizeSavedGuideLocation = (value: string) =>
+    value
+      .toLowerCase()
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .replace(/[\u2019']/g, "")
+      .replace(/[^a-z0-9]+/g, " ")
+      .trim();
+
+  const savedGuideCity = (place: SavedPlace) => {
+    const day = trip.days.find(
+      (candidate) => candidate.id === place.trip_day_id,
+    );
+
+    const searchable = normalizeSavedGuideLocation(
+      `${place.name} ${place.address || ""}`,
+    );
+
+    const cities = Array.from(
+      new Set(
+        trip.days.flatMap((tripDay) => [
+          tripDay.baseCity,
+          tripDay.title,
+          ...(tripDay.stops || []).map((stop) => stop.city),
+        ]),
+      ),
+    ).filter((value): value is string => Boolean(value));
+
+    const match = [...cities]
+      .sort((a, b) => b.length - a.length)
+      .find((city) =>
+        searchable.includes(
+          normalizeSavedGuideLocation(city),
+        ),
+      );
+
+    return (
+      match ||
+      day?.baseCity ||
+      day?.stops?.[0]?.city ||
+      day?.title ||
+      "Sicilia"
+    );
+  };
+
+  const savedGuideStop = (place: SavedPlace): TripStop => {
+    const city = savedGuideCity(place);
+
+    return {
+      id: poiIdentity(place.name, city),
+      key: `saved-${place.id}`,
+      name: place.name,
+      city,
+      kind: "poi",
+      address: place.address || undefined,
+      notes:
+        place.notes ||
+        (place.category === "food"
+          ? "Food consigliato"
+          : "Tappa aggiuntiva"),
+      coordinates:
+        place.latitude != null &&
+        place.longitude != null
+          ? {
+              lat: place.latitude,
+              lon: place.longitude,
+            }
+          : null,
+      status: "planned",
+      sourceIndex: 0,
+      sortOrder: place.sort_order ?? 0,
+      original: false,
+    };
+  };
+
+  const savedStops = savedGuidePlaces.map(savedGuideStop);
+
+  const guides = useMemo(() => {
+    return baseGuides.map((guide) => {
+      const guideName =
+        normalizeSavedGuideLocation(guide.title);
+
+      const extras = savedStops.filter((stop) => {
+        const stopCity =
+          normalizeSavedGuideLocation(stop.city);
+
+        return (
+          stopCity === guideName ||
+          stopCity.includes(guideName) ||
+          guideName.includes(stopCity)
+        );
+      });
+
+      const existing = new Set(
+        guide.stops.map((stop) => stop.id),
+      );
+
+      return {
+        ...guide,
+        stops: [
+          ...guide.stops,
+          ...extras.filter(
+            (stop) => !existing.has(stop.id),
+          ),
+        ],
+      };
+    });
+  }, [baseGuides, savedGuidePlaces]);
+
+  const allStops = useMemo(() => {
+    const result = guides.flatMap(
+      (guide) => guide.stops,
+    );
+
+    const existing = new Set(
+      result.map((stop) => stop.id),
+    );
+
+    for (const stop of savedStops) {
+      if (!existing.has(stop.id)) {
+        result.push(stop);
+      }
+    }
+
+    return result;
+  }, [guides, savedGuidePlaces]);
   useEffect(() => {
     if (initial) {
       const q = initial.toLowerCase();
@@ -2930,9 +3186,7 @@ export function GuideView({ trip, initial, onChanged }: { trip: Trip; initial?: 
               <div>
                 <strong>{s.name}</strong>
                 <small>
-                  {poiGuideContent[s.id]
-                    ? "Guida completa"
-                    : "Scheda itinerario"}
+                  {"Guida completa"}
                 </small>
               </div>
               <b>→</b>
