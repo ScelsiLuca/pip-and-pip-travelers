@@ -4183,3 +4183,25 @@ gmp-place-details-compact {
   }
 }
 
+/* MOBILE SIMULATION HERO WIDGET SPACING */
+@media (max-width: 680px) {
+
+  /*
+   * In simulazione l'hero contiene anche stato/progresso della giornata.
+   * Abbassiamo i widget GPS + meteo solo in questo stato.
+   */
+  .app:has(.simulation-pill.active) .hero {
+    min-height: 650px !important;
+  }
+
+  .app:has(.simulation-pill.active) .hero-live-cluster {
+    transform: translateY(36px) !important;
+  }
+}
+
+@media (max-width: 390px) {
+  .app:has(.simulation-pill.active) .hero {
+    min-height: 630px !important;
+  }
+}
+
