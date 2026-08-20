@@ -4091,3 +4091,54 @@ gmp-place-details-compact {
       36px !important;
   }
 }
+
+/* MOBILE BOTTOM NAV ORIENTATION FIX */
+@media (max-width: 680px) {
+  .app > nav {
+    position: fixed !important;
+
+    left: max(14px, env(safe-area-inset-left)) !important;
+    right: max(14px, env(safe-area-inset-right)) !important;
+    bottom: calc(10px + env(safe-area-inset-bottom)) !important;
+
+    width: auto !important;
+    max-width: none !important;
+
+    transform: none !important;
+
+    box-sizing: border-box !important;
+
+    display: flex !important;
+    align-items: center !important;
+    justify-content: space-around !important;
+
+    padding:
+      7px
+      10px
+      max(8px, env(safe-area-inset-bottom))
+      10px !important;
+
+    z-index: 10000 !important;
+  }
+
+  .app > nav button {
+    flex: 1 1 0 !important;
+    width: auto !important;
+    min-width: 0 !important;
+    max-width: none !important;
+  }
+}
+
+/* MOBILE HERO COMPACT SPACING */
+@media (max-width: 680px) {
+  .hero {
+    min-height: 500px !important;
+    padding-bottom: 165px !important;
+  }
+
+  .hero-live-cluster {
+    bottom: 28px !important;
+    gap: 8px !important;
+  }
+}
+
